@@ -77,7 +77,7 @@ const Assignments = () => {
             {assignments.map((assignment, index) => (
               <AssignmentButton 
                 key={index}
-                title={`${assignment.title}\n${assignment.classTitle}\nDue: ${assignment.dueDate}`} 
+                title={`${assignment.classTitle}\n${assignment.title}\nDue: ${assignment.dueDate}`} 
                 handlePress={() => handlePress(assignment.classInfo)} 
                 containerStyles={{ marginTop: 5 }}
               />
