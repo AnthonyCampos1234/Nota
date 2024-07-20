@@ -1,15 +1,10 @@
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { View, FlatList, TouchableOpacity, Text, StyleSheet, Modal, TextInput, ScrollView } from "react-native";
+import { View, FlatList, TouchableOpacity, Text, StyleSheet, Modal, TextInput } from "react-native";
 import { useState } from "react";
+import { Ionicons } from '@expo/vector-icons';
 
-import { icons } from "../../constants";
-import useAppwrite from "../../lib/useAppwrite";
-import { getUserPosts, signOut } from "../../lib/appwrite";
 import { useGlobalContext } from "../../context/GlobalProvider";
-import { EmptyState, InfoBox, VideoCard } from "../../components";
-import { CustomButton, FormField } from "../../components";
-import ClassButton from "../../components/ClassButton";
 
 const Courses = () => {
   const { user, setUser, setIsLogged } = useGlobalContext();
@@ -28,31 +23,43 @@ const Courses = () => {
     setModalVisible(false);
   };
 
+  const renderItem = ({ item }) => (
+    <TouchableOpacity onPress={() => handlePress(item.title)} style={styles.courseItem}>
+      <View style={[styles.colorDot, { backgroundColor: item.color }]} />
+      <View style={styles.courseContent}>
+        <Text style={styles.courseTitle} numberOfLines={2}>{item.title}</Text>
+      </View>
+    </TouchableOpacity>
+  );
+
   return (
-    <SafeAreaView style={{ backgroundColor: "#000", flex: 1 }}>
-      <View style={{ paddingHorizontal: 30, paddingTop: 10 }}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <View style={styles.backButton}>
-            <Text style={{ fontSize: 24, color: '#fff' }}>{'<'}</Text>
-          </View>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.topSection}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Text style={styles.backButtonText}>{'<'}</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Courses</Text>
+        <View style={styles.placeholder} />
+      </View>
+      <View style={styles.controlsSection}>
+        <TouchableOpacity style={styles.addButton}>
+          <Ionicons name="add-circle-outline" size={32} color="white" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.sortButton}>
+          <Text style={styles.sortText}>Sort ↕</Text>
         </TouchableOpacity>
       </View>
-
-      <View style={styles.header}>
-        <InfoBox title='Add' containerStyles="mt-5" titleStyles="text-lg" />
-        <InfoBox title='Sort' containerStyles="mt-5" titleStyles="text-lg" />
-      </View>
-      
       <FlatList
-        ListHeaderComponent={() => (
-          <View style={{ width: '100%', paddingHorizontal: 15 }}>
-            <ClassButton title="CS2510 30198 Fundamentals of Compu..." handlePress={() => handlePress('Northeastern Edu')} containerStyles="mt-7"/>
-            <ClassButton title="FINA2201 30396 Financial Managemen..." handlePress={() => handlePress('Canvas')} containerStyles="mt-7"/>
-            <ClassButton title="CS2510 30198 Fundamentals of Compu..." handlePress={() => handlePress('Google Classroom')} containerStyles="mt-7"/>
-            <ClassButton title="CS2510 30198 Fundamentals of Compu..." handlePress={() => handlePress('Google Calendar')} containerStyles="mt-7"/>
-            <ClassButton title="CS2510 30198 Fundamentals of Compu..." handlePress={() => handlePress('Apple Calendar')} containerStyles="mt-7"/>
-          </View>
-        )}
+        data={[
+          { id: '1', title: "CS2510 30198 Fundamentals of Computer Science 2 SEC 01", color: '#FF0000' },
+          { id: '2', title: "FINA2201 30396 Financial Management SEC 01", color: '#00FF00' },
+          { id: '3', title: "CS3500 40039 Object-Oriented Design SEC 01", color: '#00FFFF' },
+          { id: '4', title: "MATH2331 31477 Linear Algebra SEC 02", color: '#FF00FF' },
+          { id: '5', title: "PHYS1151 32556 Physics for Engineering I SEC 01", color: '#FFFF00' },
+        ]}
+        renderItem={renderItem}
+        keyExtractor={item => item.id}
+        contentContainerStyle={styles.listContainer}
       />
 
       <Modal
@@ -94,21 +101,85 @@ const Courses = () => {
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  topSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 10,
+  },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
+    width: 50,
+    height: 50,
+    borderRadius: 15,
     backgroundColor: '#333',
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
   },
-  header: {
-    width: '100%', 
+  backButtonText: {
+    fontSize: 30,
+    color: '#fff',
+  },
+  headerTitle: {
+    flex: 1,
+    textAlign: 'center',
+    color: 'white',
+    fontSize: 28,
+    fontWeight: 'bold',
+  },
+  placeholder: {
+    width: 50,
+    height: 50,
+  },
+  controlsSection: {
+    flexDirection: 'row',
     justifyContent: 'space-between',
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    marginTop: 6,
-    paddingHorizontal: 40
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+  },
+  addButton: {
+    width: 50,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sortButton: {
+    width: 80,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sortText: {
+    color: 'white',
+    fontSize: 20,
+  },
+  listContainer: {
+    paddingHorizontal: 20,
+  },
+  courseItem: {
+    flexDirection: 'row',
+    backgroundColor: '#333333',
+    borderRadius: 10,
+    marginBottom: 10,
+    overflow: 'hidden',
+  },
+  colorDot: {
+    width: 10,
+    height: '100%',
+  },
+  courseContent: {
+    flex: 1,
+    padding: 15,
+  },
+  courseTitle: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   centeredView: {
     flex: 1,
@@ -130,7 +201,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
-    width: '80%'
+    width: '80%',
   },
   button: {
     borderRadius: 20,
@@ -153,7 +224,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     textAlign: 'center',
     fontSize: 20,
-    fontWeight: 'bold'
+    fontWeight: 'bold',
   },
   modalDescription: {
     marginBottom: 20,
