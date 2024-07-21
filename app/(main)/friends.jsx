@@ -1,67 +1,102 @@
-import { router } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { View, Image, FlatList, TouchableOpacity, Text, Dimensions } from "react-native";
+import React from 'react';
+import { StyleSheet, View, TouchableOpacity, Text, FlatList } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
-import { useGlobalContext } from "../../context/GlobalProvider";
-import { EmptyState, InfoBox, VideoCard } from "../../components";
-import { CustomButton, FormField } from "../../components";
+const friendsList = [
+  { id: '1', name: 'Anthony Campos' },
+  { id: '2', name: 'Tim Tran' },
+  { id: '3', name: 'Johnny Ram' },
+  { id: '4', name: 'Bob Comb' },
+  { id: '5', name: 'Randy Warhol' },
+  { id: '6', name: 'Ella Maven' },
+  { id: '7', name: 'Barack Obama' },
+  { id: '8', name: 'Donald Trump' },
+  { id: '9', name: 'Penny Wise' },
+  { id: '10', name: 'Jimmy Crickets' },
+];
 
-const Friends = () => {
-  const { user, setUser, setIsLogged } = useGlobalContext();
+const FriendItem = ({ name }) => (
+  <View style={styles.friendItem}>
+    <Ionicons name="person-circle-outline" size={24} color="white" />
+    <Text style={styles.friendName}>{name}</Text>
+  </View>
+);
+
+const FriendsScreen = () => {
+  const navigation = useNavigation();
+
   return (
-    <SafeAreaView style={{ backgroundColor: "#000", flex: 1 }}>
-      <View className="w-full flex justify-center items-center mt-6 px-4">
-
-            <View className="w-16 h-16 border border-white rounded-lg flex justify-center items-center">
-              <Image
-                source={{ uri: user?.avatar }}
-                className="w-[90%] h-[90%] rounded-lg"
-                resizeMode="cover"
-              />
-            </View>
-
-            <InfoBox
-              title={user?.username}
-              containerStyles="mt-5"
-              titleStyles="text-lg"
-            />
-
-            <View className="mt-5 flex flex-row">
-              <InfoBox
-                title='4.00'
-                subtitle="GPA"
-                titleStyles="text-xl"
-                containerStyles="mr-10"
-              />
-              <InfoBox
-                title="10"
-                subtitle="Friends"
-                titleStyles="text-xl"
-              />
-            </View>
-
-            <InfoBox
-              title='Connect Accounts:'
-              containerStyles="mt-5"
-              titleStyles="text-lg"
-        />
-        </View>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.topSection}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="white" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Friends</Text>
+        <TouchableOpacity style={styles.addButton}>
+          <Ionicons name="add-circle-outline" size={32} color="white" />
+        </TouchableOpacity>
+      </View>
       <FlatList
-        ListHeaderComponent={() => (
-          <View className="w-full flex justify-center items-center px-4">
-            <View className="w-full flex justify-center px-4">
-              <CustomButton title="Northeastern Edu" containerStyles="mt-7"/>
-              <CustomButton title="Canvas" containerStyles="mt-7"/>
-              <CustomButton title="Google Classroom" containerStyles="mt-7"/>
-              <CustomButton title="Google Calendar" containerStyles="mt-7"/>
-              <CustomButton title="Apple Calendar" containerStyles="mt-7"/>
-            </View>
-
-          </View>
-        )}
+        data={friendsList}
+        renderItem={({ item }) => <FriendItem name={item.name} />}
+        keyExtractor={item => item.id}
+        contentContainerStyle={styles.listContainer}
       />
     </SafeAreaView>
   );
 };
 
-export default Friends;
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000000',
+  },
+  topSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 10,
+  },
+  backButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 15,
+    backgroundColor: '#333',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    flex: 1,
+    textAlign: 'center',
+    color: 'white',
+    fontSize: 28,
+    fontWeight: 'bold',
+  },
+  addButton: {
+    width: 50,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  listContainer: {
+    paddingHorizontal: 20,
+  },
+  friendItem: {
+    flexDirection: 'row',
+    backgroundColor: '#333333',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 10,
+    alignItems: 'center',
+  },
+  friendName: {
+    color: 'white',
+    fontSize: 16,
+    marginLeft: 10,
+  },
+});
+
+export default FriendsScreen;

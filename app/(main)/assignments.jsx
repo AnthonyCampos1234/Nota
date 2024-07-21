@@ -1,19 +1,120 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 
-const AssignmentItem = ({ item }) => (
-  <View style={styles.assignmentItem}>
+const AssignmentItem = ({ item, onPress }) => (
+  <TouchableOpacity onPress={() => onPress(item)} style={styles.assignmentItem}>
     <View style={[styles.colorDot, { backgroundColor: item.color }]} />
     <View style={styles.assignmentContent}>
       <Text style={styles.classTitle} numberOfLines={1}>{item.classTitle}</Text>
       <Text style={styles.assignmentTitle}>{item.title}</Text>
       <Text style={styles.dueDate}>Due: {item.dueDate}</Text>
     </View>
-  </View>
+  </TouchableOpacity>
 );
+
+const AssignmentActionModal = ({ visible, assignment, onClose, onEdit, onDelete }) => (
+  <Modal
+    animationType="slide"
+    transparent={true}
+    visible={visible}
+    onRequestClose={onClose}
+  >
+    <View style={styles.modalContainer}>
+      <View style={styles.modalContent}>
+        <Text style={styles.modalTitle}>{assignment?.title}</Text>
+        <Text style={styles.modalText}>Class: {assignment?.classTitle}</Text>
+        <Text style={styles.modalText}>Due: {assignment?.dueDate}</Text>
+        <Text style={styles.modalText}>Description: {assignment?.description || 'No description available.'}</Text>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity onPress={onEdit} style={styles.editButton}>
+            <Text style={styles.buttonText}>Edit</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onDelete} style={styles.deleteButton}>
+            <Text style={styles.buttonText}>Delete</Text>
+          </TouchableOpacity>
+        </View>
+        <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+          <Text style={styles.closeButtonText}>Close</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </Modal>
+);
+
+const EditAssignmentModal = ({ visible, assignment, onSave, onCancel }) => {
+  const [title, setTitle] = useState('');
+  const [classTitle, setClassTitle] = useState('');
+  const [dueDate, setDueDate] = useState('');
+  const [description, setDescription] = useState('');
+
+  useEffect(() => {
+    if (assignment) {
+      setTitle(assignment.title || '');
+      setClassTitle(assignment.classTitle || '');
+      setDueDate(assignment.dueDate || '');
+      setDescription(assignment.description || '');
+    }
+  }, [assignment]);
+
+  const handleSave = () => {
+    onSave({ ...assignment, title, classTitle, dueDate, description });
+  };
+
+  return (
+    <Modal
+      animationType="slide"
+      transparent={true}
+      visible={visible}
+      onRequestClose={onCancel}
+    >
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>{assignment?.id ? 'Edit Assignment' : 'New Assignment'}</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Title"
+            placeholderTextColor="#999"
+            value={title}
+            onChangeText={setTitle}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Class"
+            placeholderTextColor="#999"
+            value={classTitle}
+            onChangeText={setClassTitle}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Due Date"
+            placeholderTextColor="#999"
+            value={dueDate}
+            onChangeText={setDueDate}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Description"
+            placeholderTextColor="#999"
+            value={description}
+            onChangeText={setDescription}
+            multiline
+          />
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
+              <Text style={styles.buttonText}>Save</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={onCancel} style={styles.cancelButton}>
+              <Text style={styles.buttonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+};
 
 const AssignmentsScreen = () => {
   const navigation = useNavigation();
@@ -23,51 +124,92 @@ const AssignmentsScreen = () => {
       classTitle: 'INTB1203 40039 Intl Bus and Social Resp SEC 01 Sum...',
       title: 'Reflection Paper[Optional]',
       dueDate: '1:00 PM',
-      color: '#FF0000'
+      color: '#FF0000',
+      description: 'Write a reflection paper on the topics covered in class this week.'
     },
-    {
-      id: '2',
-      classTitle: 'CS 3500 Summer 1 2024 (Boston)',
-      title: 'Assignment 6: Stocks (Part 3)',
-      dueDate: '6:00 PM',
-      color: '#00FF00'
-    },
-    {
-      id: '3',
-      classTitle: 'FINA2201 30396 Financial Management SEC 01 Sprin...',
-      title: 'Time Value of Money 1',
-      dueDate: '3 days',
-      color: '#00FFFF'
-    },
-    {
-      id: '4',
-      classTitle: 'INTB1203 40039 Intl Bus and Social Resp SEC 01 Sum...',
-      title: 'Firm Strategy Presentation a...',
-      dueDate: '1 week',
-      color: '#FF0000'
-    },
-    {
-      id: '5',
-      classTitle: 'ENGW1111 11477 First-Year Writing SEC 39 Fall 2023 ...',
-      title: 'Draft 1: Exploratory Essay',
-      dueDate: '3 weeks',
-      color: '#0000FF'
-    },
-    {
-      id: '6',
-      classTitle: 'ECON1126 32556 Recitation for ECON 1116 SEC 01 Sp...',
-      title: 'Lab 4: Understanding Econo...',
-      dueDate: '1 month',
-      color: '#FF00FF'
-    },
-    {
-      id: '7',
-      classTitle: 'CS2510 30198 Fundamentals of Computer Sci 2 SEC 0...',
-      title: 'Assignment 4: Clock (Part 1)',
-      dueDate: '2 months',
-      color: '#FFFF00'
-    },
+    // ... (other assignments)
   ]);
+
+  const [actionModalVisible, setActionModalVisible] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [selectedAssignment, setSelectedAssignment] = useState(null);
+  const [sortOrder, setSortOrder] = useState('asc');
+
+  const handleAssignmentPress = (assignment) => {
+    setSelectedAssignment(assignment);
+    setActionModalVisible(true);
+  };
+
+  const getRandomColor = () => {
+    const colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
+    return colors[Math.floor(Math.random() * colors.length)];
+  };
+
+  const handleAddAssignment = () => {
+    const newAssignment = {
+      id: '',
+      classTitle: '',
+      title: '',
+      dueDate: '',
+      color: getRandomColor(),
+      description: ''
+    };
+    setSelectedAssignment(newAssignment);
+    setEditModalVisible(true);
+  };
+
+  const handleEditAssignment = () => {
+    setActionModalVisible(false);
+    setEditModalVisible(true);
+  };
+
+  const handleDeleteAssignment = () => {
+    Alert.alert(
+      "Delete Assignment",
+      "Are you sure you want to delete this assignment?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "OK",
+          onPress: () => {
+            setAssignments(assignments.filter(a => a.id !== selectedAssignment.id));
+            setActionModalVisible(false);
+          }
+        }
+      ]
+    );
+  };
+
+  const handleSaveAssignment = (updatedAssignment) => {
+    if (updatedAssignment.id) {
+      setAssignments(assignments.map(a => a.id === updatedAssignment.id ? updatedAssignment : a));
+    } else {
+      const newAssignment = {
+        ...updatedAssignment,
+        id: String(assignments.length + 1),
+        color: getRandomColor(),
+      };
+      setAssignments([...assignments, newAssignment]);
+    }
+    setEditModalVisible(false);
+    setSelectedAssignment(null);
+  };
+
+  const handleSort = () => {
+    const newSortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+    setSortOrder(newSortOrder);
+    const sortedAssignments = [...assignments].sort((a, b) => {
+      if (newSortOrder === 'asc') {
+        return new Date(a.dueDate) - new Date(b.dueDate);
+      } else {
+        return new Date(b.dueDate) - new Date(a.dueDate);
+      }
+    });
+    setAssignments(sortedAssignments);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -79,18 +221,34 @@ const AssignmentsScreen = () => {
         <View style={styles.placeholder} />
       </View>
       <View style={styles.controlsSection}>
-        <TouchableOpacity style={styles.addButton}>
+        <TouchableOpacity onPress={handleAddAssignment} style={styles.addButton}>
           <Ionicons name="add-circle-outline" size={32} color="white" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.sortButton}>
-          <Text style={styles.sortText}>Sort ↕</Text>
+        <TouchableOpacity onPress={handleSort} style={styles.sortButton}>
+          <Text style={styles.sortText}>Sort {sortOrder === 'asc' ? '↑' : '↓'}</Text>
         </TouchableOpacity>
       </View>
       <FlatList
         data={assignments}
-        renderItem={({ item }) => <AssignmentItem item={item} />}
+        renderItem={({ item }) => <AssignmentItem item={item} onPress={handleAssignmentPress} />}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContainer}
+      />
+      <AssignmentActionModal
+        visible={actionModalVisible}
+        assignment={selectedAssignment}
+        onClose={() => setActionModalVisible(false)}
+        onEdit={handleEditAssignment}
+        onDelete={handleDeleteAssignment}
+      />
+      <EditAssignmentModal
+        visible={editModalVisible}
+        assignment={selectedAssignment}
+        onSave={handleSaveAssignment}
+        onCancel={() => {
+          setEditModalVisible(false);
+          setSelectedAssignment(null);
+        }}
       />
     </SafeAreaView>
   );
@@ -186,6 +344,85 @@ const styles = StyleSheet.create({
   dueDate: {
     color: 'white',
     fontSize: 14,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: '#333',
+    borderRadius: 10,
+    padding: 20,
+    width: '80%',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 10,
+  },
+  modalText: {
+    fontSize: 16,
+    color: 'white',
+    marginBottom: 5,
+  },
+  closeButton: {
+    backgroundColor: '#555',
+    padding: 10,
+    borderRadius: 5,
+    alignSelf: 'flex-end',
+    marginTop: 10,
+  },
+  closeButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  input: {
+    backgroundColor: '#444',
+    color: 'white',
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 10,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+  },
+  saveButton: {
+    backgroundColor: '#4CAF50',
+    padding: 10,
+    borderRadius: 5,
+    flex: 1,
+    marginRight: 5,
+  },
+  cancelButton: {
+    backgroundColor: '#f44336',
+    padding: 10,
+    borderRadius: 5,
+    flex: 1,
+    marginLeft: 5,
+  },
+  editButton: {
+    backgroundColor: '#4CAF50',
+    padding: 10,
+    borderRadius: 5,
+    flex: 1,
+    marginRight: 5,
+  },
+  deleteButton: {
+    backgroundColor: '#f44336',
+    padding: 10,
+    borderRadius: 5,
+    flex: 1,
+    marginLeft: 5,
+  },
+  buttonText: {
+    color: 'white',
+    textAlign: 'center',
+    fontWeight: 'bold',
   },
 });
 

@@ -1,13 +1,17 @@
 import React from 'react';
-import { TouchableOpacity, Text, View, StyleSheet, Image } from 'react-native';
+import { TouchableOpacity, Text, View, StyleSheet, Dimensions } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
-const CustomButton2 = ({ title, icon, onPress }) => {
+const windowWidth = Dimensions.get('window').width;
+const buttonWidth = (windowWidth - 75) / 2;
+
+const CustomButton2 = ({ title, iconName, onPress }) => {
   return (
-      <TouchableOpacity style={styles.button} onPress={onPress}>
+    <TouchableOpacity style={styles.button} onPress={onPress}>
       <View style={styles.iconContainer}>
-        <Image source={icon} style={styles.icon} />
+        <Ionicons name={iconName} size={40} color="white" />
       </View>
-          <Text style={styles.buttonText}>{title}</Text>
+      <Text style={styles.buttonText}>{title}</Text>
     </TouchableOpacity>
   );
 };
@@ -18,25 +22,26 @@ const styles = StyleSheet.create({
     borderColor: '#FFF',
     borderWidth: 1,
     borderRadius: 10,
-    paddingVertical: 20,
-    paddingHorizontal: 20,
+    paddingVertical: 15,
+    paddingHorizontal: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    width: 150,
-    height: 150,
-    margin: 10,
+    width: buttonWidth,
+    aspectRatio: 1,
+    margin: 5,
+    shadowColor: '#FFF',
+    shadowOpacity: 1,
+    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 0 },
   },
   iconContainer: {
-    marginBottom: 25,
-  },
-  icon: {
-    width: 40,
-    height: 40,
+    marginBottom: 15,
   },
   buttonText: {
     color: '#FFF',
     fontSize: 14,
     fontWeight: '600',
+    textAlign: 'center',
   },
 });
 
