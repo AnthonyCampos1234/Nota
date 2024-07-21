@@ -1,67 +1,115 @@
-import { router } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { View, Image, FlatList, TouchableOpacity, Text, Dimensions } from "react-native";
+import React from 'react';
+import { SafeAreaView, View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
-import { useGlobalContext } from "../../context/GlobalProvider";
-import { EmptyState, InfoBox, VideoCard } from "../../components";
-import { CustomButton, FormField } from "../../components";
+const leaderboardData = [
+  { name: 'Anthony Campos', gpa: 4.00, medal: 'gold' },
+  { name: 'Tim Tran', gpa: 4.00, medal: 'gold' },
+  { name: 'Johnny Ram', gpa: 3.98, medal: 'bronze' },
+  { name: 'Bob Comb', gpa: 3.95 },
+  { name: 'Randy Warhol', gpa: 3.94 },
+  { name: 'Ella Maven', gpa: 3.91 },
+  { name: 'Barack Obama', gpa: 3.87 },
+  { name: 'Donald Trump', gpa: 3.82 },
+  { name: 'Penny Wise', gpa: 3.52 },
+  { name: 'Jimmy Crickets', gpa: 3.51 },
+];
 
 const Leaderboard = () => {
-  const { user, setUser, setIsLogged } = useGlobalContext();
+  const navigation = useNavigation();
+
+  const renderItem = ({ item, index }) => (
+    <View style={styles.item}>
+      {item.medal && (
+        <Text style={styles.medal}>
+          {item.medal === 'gold' ? '🥇' : item.medal === 'silver' ? '🥈' : '🥉'}
+        </Text>
+      )}
+      <Text style={styles.name}>{item.name}</Text>
+      <Text style={styles.gpa}>{item.gpa.toFixed(2)}</Text>
+    </View>
+  );
+
   return (
-    <SafeAreaView style={{ backgroundColor: "#000", flex: 1 }}>
-      <View className="w-full flex justify-center items-center mt-6 px-4">
-
-            <View className="w-16 h-16 border border-white rounded-lg flex justify-center items-center">
-              <Image
-                source={{ uri: user?.avatar }}
-                className="w-[90%] h-[90%] rounded-lg"
-                resizeMode="cover"
-              />
-            </View>
-
-            <InfoBox
-              title={user?.username}
-              containerStyles="mt-5"
-              titleStyles="text-lg"
-            />
-
-            <View className="mt-5 flex flex-row">
-              <InfoBox
-                title='4.00'
-                subtitle="GPA"
-                titleStyles="text-xl"
-                containerStyles="mr-10"
-              />
-              <InfoBox
-                title="10"
-                subtitle="Friends"
-                titleStyles="text-xl"
-              />
-            </View>
-
-            <InfoBox
-              title='Connect Accounts:'
-              containerStyles="mt-5"
-              titleStyles="text-lg"
-        />
-        </View>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.topSection}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Text style={styles.backButtonText}>{'<'}</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Northeastern University</Text>
+        <View style={styles.placeholder} />
+      </View>
       <FlatList
-        ListHeaderComponent={() => (
-          <View className="w-full flex justify-center items-center px-4">
-            <View className="w-full flex justify-center px-4">
-              <CustomButton title="Northeastern Edu" containerStyles="mt-7"/>
-              <CustomButton title="Canvas" containerStyles="mt-7"/>
-              <CustomButton title="Google Classroom" containerStyles="mt-7"/>
-              <CustomButton title="Google Calendar" containerStyles="mt-7"/>
-              <CustomButton title="Apple Calendar" containerStyles="mt-7"/>
-            </View>
-
-          </View>
-        )}
+        data={leaderboardData}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.name}
+        contentContainerStyle={styles.listContainer}
       />
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000000',
+  },
+  topSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 10,
+  },
+  backButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 15,
+    backgroundColor: '#333',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backButtonText: {
+    fontSize: 30,
+    color: '#fff',
+  },
+  headerTitle: {
+    flex: 1,
+    textAlign: 'center',
+    color: 'white',
+    fontSize: 28,
+    fontWeight: 'bold',
+  },
+  placeholder: {
+    width: 50,
+    height: 50,
+  },
+  listContainer: {
+    paddingHorizontal: 20,
+  },
+  item: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 15,
+    marginBottom: 10,
+    backgroundColor: '#333',
+    borderRadius: 10,
+  },
+  medal: {
+    fontSize: 20,
+    marginRight: 10,
+  },
+  name: {
+    flex: 1,
+    color: 'white',
+    fontSize: 16,
+  },
+  gpa: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+});
 
 export default Leaderboard;
