@@ -1,6 +1,7 @@
 import React from 'react';
 import { SafeAreaView, View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 
 const leaderboardData = [
   { name: 'Anthony Campos', gpa: 4.00, medal: 'gold' },
@@ -34,7 +35,7 @@ const Leaderboard = () => {
     <SafeAreaView style={styles.container}>
       <View style={styles.topSection}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={styles.backButtonText}>{'<'}</Text>
+          <Ionicons name="chevron-back" size={24} color="white" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Northeastern University</Text>
         <View style={styles.placeholder} />
@@ -64,10 +65,11 @@ const styles = StyleSheet.create({
   backButton: {
     width: 50,
     height: 50,
-    borderRadius: 15,
-    backgroundColor: '#333',
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.3)',
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 15,
   },
   backButtonText: {
     fontSize: 30,

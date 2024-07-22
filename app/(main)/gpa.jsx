@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 
 const ClassItem = ({ item }) => (
   <View style={styles.classItem}>
@@ -109,7 +110,7 @@ const GPAScreen = () => {
       <ScrollView>
         <View style={styles.topSection}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Text style={styles.backButtonText}>{'<'}</Text>
+            <Ionicons name="chevron-back" size={24} color="white" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>GPA</Text>
           <View style={styles.placeholder} />
@@ -192,10 +193,11 @@ const styles = StyleSheet.create({
   backButton: {
     width: 50,
     height: 50,
-    borderRadius: 15,
-    backgroundColor: '#333',
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.3)',
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 15,
   },
   backButtonText: {
     fontSize: 30,

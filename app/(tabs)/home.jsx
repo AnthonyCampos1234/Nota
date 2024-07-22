@@ -1,12 +1,66 @@
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Text, View, StyleSheet, StatusBar, ScrollView } from "react-native";
+import { Text, View, StyleSheet, StatusBar, ScrollView, Animated } from "react-native";
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from "expo-router";
 import { Ionicons } from '@expo/vector-icons';
 import CustomButton2 from "../../components/CustomButton2";
+import { getCurrentUser, getFriends, addFriend, removeFriend } from "../../lib/appwrite";
 
-const Home = ({ userName = "Anthony" }) => {
+const Home = () => {
+  const [userName, setUserName] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const animatedValue = useRef(new Animated.Value(0)).current;
+  const isInitialMount = useRef(true);
+
+  const startAnimation = () => {
+    animatedValue.setValue(0);
+    Animated.spring(animatedValue, {
+      toValue: 1,
+      tension: 10,
+      friction: 0,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const user = await getCurrentUser();
+        if (user && user.username) {
+          setUserName(user.username);
+          setIsLoading(false);
+          startAnimation();
+        } else {
+          throw new Error("Username not found in user data");
+        }
+      } catch (err) {
+        console.error("Error fetching user:", err);
+        setError(err.message);
+        setIsLoading(false);
+      }
+    };
+
+    fetchUser();
+
+    if (!isInitialMount.current) {
+      startAnimation();
+    } else {
+      isInitialMount.current = false;
+    }
+  }, []);
+
+  const opacity = animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.7, 1],
+  });
+
+  const scale = animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.9, 1],
+  });
+
   const menuItems = [
     { title: "Courses", icon: "book-outline", route: '(main)/courses' },
     { title: "Assignments", icon: "document-text-outline", route: '(main)/assignments' },
@@ -24,7 +78,7 @@ const Home = ({ userName = "Anthony" }) => {
       <View style={styles.titleContainer}>
         <Text style={styles.title}>Nota</Text>
       </View>
-      <ScrollView contentContainerStyle={styles.scrollViewContent}>
+      <View contentContainerStyle={styles.scrollViewContent}>
         <View style={styles.headerContainer}>
           <View style={styles.greetingContainer}>
             <Text style={styles.greeting}>Hi,</Text>
@@ -35,13 +89,26 @@ const Home = ({ userName = "Anthony" }) => {
                 end={{ x: 1, y: 0 }}
                 style={styles.gradient}
               >
-                <Text style={styles.gradientText}>
-                  {userName}
-                </Text>
+                {isLoading ? (
+                  <Text style={styles.gradientText}>Loading...</Text>
+                ) : error ? (
+                  <Text style={styles.gradientText}>Error: {error}</Text>
+                ) : (
+                  <Animated.Text
+                    style={[
+                      styles.gradientText,
+                      {
+                        opacity: opacity,
+                        transform: [{ scale: scale }]
+                      }
+                    ]}
+                  >
+                    {userName || "User"}
+                  </Animated.Text>
+                )}
               </LinearGradient>
             </View>
           </View>
-
           <View style={styles.buttonsContainer}>
             {menuItems.map((item, index) => (
               <CustomButton2
@@ -53,7 +120,7 @@ const Home = ({ userName = "Anthony" }) => {
             ))}
           </View>
         </View>
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 };
@@ -88,7 +155,7 @@ const styles = StyleSheet.create({
   },
   greeting: {
     fontSize: 25,
-    color: '#BBB',
+    color: '#FFF',
     marginBottom: 8,
   },
   gradientTextContainer: {

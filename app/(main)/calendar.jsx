@@ -12,7 +12,10 @@ const CalendarScreen = () => {
   const [events, setEvents] = useState([]);
   const [viewMode, setViewMode] = useState('Day');
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [newEvent, setNewEvent] = useState({ title: '', location: '', startTime: '', endTime: '', color: '' });
+  const [newEvent, setNewEvent] = useState({
+    title: '', location: '',
+    startTime: '', endTime: '', color: ''
+  });
   const [modalAnimation] = useState(new Animated.Value(0));
 
   useEffect(() => {
@@ -22,8 +25,14 @@ const CalendarScreen = () => {
   const fetchEvents = (date) => {
     // Simulating API call
     const sampleEvents = [
-      { id: '1', title: 'CS 3500 1 2024', location: 'Richards Hall 254', startTime: '11:40', endTime: '13:20', color: '#4CAF50', date: new Date(date) },
-      { id: '2', title: 'INTB1203 40039', location: 'Dodge Hall 070', startTime: '13:30', endTime: '15:10', color: '#FF5722', date: new Date(date) },
+      {
+        id: '1', title: 'CS 3500 1 2024', location: 'Richards Hall 254',
+        startTime: '11:40', endTime: '13:20', color: '#4CAF50', date: new Date(date)
+      },
+      {
+        id: '2', title: 'INTB1203 40039', location: 'Dodge Hall 070',
+        startTime: '13:30', endTime: '15:10', color: '#FF5722', date: new Date(date)
+      },
     ];
     setEvents(sampleEvents);
   };
@@ -76,7 +85,10 @@ const CalendarScreen = () => {
       const height = (endHour - startHour) * 60 + (endMinute - startMinute);
 
       return (
-        <TouchableOpacity key={event.id} style={[styles.event, { top, height, backgroundColor: event.color }]}>
+        <TouchableOpacity key={event.id} style={[styles.event, {
+          top, height,
+          backgroundColor: event.color
+        }]}>
           <Text style={styles.eventTitle}>{event.title}</Text>
           <Text style={styles.eventLocation}>{event.location}</Text>
           <Text style={styles.eventTime}>{event.startTime} - {event.endTime}</Text>
@@ -294,8 +306,8 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 20,
   },
   backButton: {
-    width: 40,
-    height: 40,
+    width: 50,
+    height: 50,
     borderRadius: 10,
     backgroundColor: 'rgba(255,255,255,0.3)',
     justifyContent: 'center',
