@@ -29,7 +29,6 @@ const SignIn = () => {
       setUser(result);
       setIsLogged(true);
 
-      Alert.alert("Success", "User signed in successfully");
       router.replace("/home");
     } catch (error) {
       Alert.alert("Error", error.message);
@@ -41,14 +40,14 @@ const SignIn = () => {
   return (
     <SafeAreaView style={{ backgroundColor: "#000", flex: 1 }}>
       <View
-          className="w-full flex justify-center items-center px-4"
+        className="w-full flex justify-center items-center px-4"
       >
         <Image
-            source={images.NootaLogoForHome}
-            resizeMode="contain"
-            style={{ width: 100, height: 100 }}
-            className="justify-center items-center"
-          />
+          source={images.NootaLogoForHome}
+          resizeMode="contain"
+          style={{ width: 100, height: 100 }}
+          className="justify-center items-center"
+        />
       </View>
 
       <ScrollView>

@@ -1,16 +1,16 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Text, View, StyleSheet, StatusBar, ScrollView, Animated } from "react-native";
+import { Text, View, StyleSheet, StatusBar, Animated } from "react-native";
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from "expo-router";
-import { Ionicons } from '@expo/vector-icons';
+import { router, useFocusEffect } from "expo-router";
 import CustomButton2 from "../../components/CustomButton2";
-import { getCurrentUser, getFriends, addFriend, removeFriend } from "../../lib/appwrite";
+import { getCurrentUser, getFriendRequests } from "../../lib/appwrite";
 
 const Home = () => {
   const [userName, setUserName] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [pendingRequests, setPendingRequests] = useState(0);
   const animatedValue = useRef(new Animated.Value(0)).current;
   const isInitialMount = useRef(true);
 
@@ -24,32 +24,55 @@ const Home = () => {
     }).start();
   };
 
+  const fetchFriendRequests = useCallback(async (userId) => {
+    try {
+      const requests = await getFriendRequests(userId);
+      setPendingRequests(requests.length);
+    } catch (err) {
+      console.error("Error fetching friend requests:", err);
+    }
+  }, []);
+
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchUserAndRequests = async () => {
       try {
         const user = await getCurrentUser();
         if (user && user.username) {
           setUserName(user.username);
           setIsLoading(false);
           startAnimation();
+          await fetchFriendRequests(user.$id);
         } else {
           throw new Error("Username not found in user data");
         }
       } catch (err) {
-        console.error("Error fetching user:", err);
+        console.error("Error fetching user or friend requests:", err);
         setError(err.message);
         setIsLoading(false);
       }
     };
 
-    fetchUser();
+    fetchUserAndRequests();
 
     if (!isInitialMount.current) {
       startAnimation();
     } else {
       isInitialMount.current = false;
     }
-  }, []);
+  }, [fetchFriendRequests]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const refreshFriendRequests = async () => {
+        const user = await getCurrentUser();
+        if (user) {
+          await fetchFriendRequests(user.$id);
+        }
+      };
+
+      refreshFriendRequests();
+    }, [fetchFriendRequests])
+  );
 
   const opacity = animatedValue.interpolate({
     inputRange: [0, 1],
@@ -68,7 +91,7 @@ const Home = () => {
     { title: "Calendar", icon: "calendar", route: '(main)/calendar' },
     { title: "Timeline", icon: "time-outline", route: '(main)/timeline' },
     { title: "GPA", icon: "school-outline", route: '(main)/gpa' },
-    { title: "Friends", icon: "people-outline", route: '(main)/friends' },
+    { title: "Friends", icon: "people-outline", route: '(main)/friends', notificationCount: pendingRequests },
     { title: "Leaderboard", icon: "podium-outline", route: '(main)/leaderboard' },
   ];
 
@@ -116,6 +139,7 @@ const Home = () => {
                 title={item.title}
                 iconName={item.icon}
                 onPress={() => router.push(item.route)}
+                notificationCount={item.notificationCount}
               />
             ))}
           </View>
