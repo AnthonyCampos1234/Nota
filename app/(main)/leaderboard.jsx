@@ -2,6 +2,18 @@ import React from 'react';
 import { SafeAreaView, View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+
+const gradientColors = [
+  ['#FF416C', '#FF4B2B'],
+  ['#4776E6', '#8E54E9'],
+  ['#00C9FF', '#92FE9D'],
+  ['#F857A6', '#FF5858'],
+  ['#7F00FF', '#E100FF'],
+  ['#FFD200', '#F7971E'],
+  ['#43CEA2', '#185A9D'],
+  ['#FFA17F', '#00223E'],
+];
 
 const leaderboardData = [
   { name: 'Anthony Campos', gpa: 4.00, medal: 'gold' },
@@ -20,7 +32,12 @@ const Leaderboard = () => {
   const navigation = useNavigation();
 
   const renderItem = ({ item, index }) => (
-    <View style={styles.item}>
+    <LinearGradient
+      colors={gradientColors[index % gradientColors.length]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.item}
+    >
       {item.medal && (
         <Text style={styles.medal}>
           {item.medal === 'gold' ? '🥇' : item.medal === 'silver' ? '🥈' : '🥉'}
@@ -28,18 +45,23 @@ const Leaderboard = () => {
       )}
       <Text style={styles.name}>{item.name}</Text>
       <Text style={styles.gpa}>{item.gpa.toFixed(2)}</Text>
-    </View>
+    </LinearGradient>
   );
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.topSection}>
+      <LinearGradient
+        colors={gradientColors[0]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.topSection}
+      >
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="chevron-back" size={24} color="white" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Northeastern University</Text>
         <View style={styles.placeholder} />
-      </View>
+      </LinearGradient>
       <FlatList
         data={leaderboardData}
         renderItem={renderItem}
@@ -61,6 +83,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 10,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
   backButton: {
     width: 50,
@@ -70,10 +94,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
-  },
-  backButtonText: {
-    fontSize: 30,
-    color: '#fff',
   },
   headerTitle: {
     flex: 1,
@@ -88,6 +108,7 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     paddingHorizontal: 20,
+    paddingTop: 20,
   },
   item: {
     flexDirection: 'row',
@@ -95,7 +116,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 15,
     marginBottom: 10,
-    backgroundColor: '#333',
     borderRadius: 10,
   },
   medal: {
@@ -106,6 +126,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: 'white',
     fontSize: 16,
+    fontWeight: 'bold',
   },
   gpa: {
     color: 'white',

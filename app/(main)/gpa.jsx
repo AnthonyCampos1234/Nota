@@ -1,71 +1,87 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, ScrollView, Dimensions } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
+import { getCurrentUser } from '../../lib/appwrite';
+import { router, useFocusEffect } from "expo-router";
+
+
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+const colors = {
+  primary: '#000000',
+  secondary: '#4A90E2',
+  tertiary: '#50C878',
+  quaternary: '#9B59B6',
+  accent: '#FF69B4',
+  text: '#FFFFFF',
+  textSecondary: '#CCCCCC',
+  gradientStart: '#000000',
+  gradientMiddle1: '#0F2027',
+  gradientMiddle2: '#203A43',
+  gradientEnd: '#2C5364',
+};
+
+const gradientColors = [
+  [colors.gradientStart, colors.gradientMiddle1, colors.gradientMiddle2, colors.gradientEnd],
+  [colors.secondary, colors.quaternary],
+  [colors.tertiary, colors.accent],
+];
 
 const ClassItem = ({ item }) => (
-  <View style={styles.classItem}>
+  <LinearGradient
+    colors={[colors.gradientMiddle1, colors.gradientMiddle2]}
+    start={{ x: 0, y: 0 }}
+    end={{ x: 1, y: 1 }}
+    style={styles.classItem}
+  >
     <View style={[styles.colorDot, { backgroundColor: item.color }]} />
     <View style={styles.classContent}>
       <Text style={styles.classTitle} numberOfLines={1}>{item.title}</Text>
       <Text style={styles.classInfo}>{item.grade} ({item.credits} cr)</Text>
     </View>
-  </View>
+  </LinearGradient>
 );
 
 const GPAScreen = () => {
-  const navigation = useNavigation();
-  const [sortOrder, setSortOrder] = useState('asc');
-  const [selectedSemester, setSelectedSemester] = useState('All');
+  const insets = useSafeAreaInsets();
   const [displayedGPA, setDisplayedGPA] = useState('0.00');
+  const [actualGPA, setActualGPA] = useState(0);
+  const [totalCredits, setTotalCredits] = useState(0);
   const initialLoadRef = useRef(true);
   const [hypotheticalGrades, setHypotheticalGrades] = useState([]);
   const [whatIfGPA, setWhatIfGPA] = useState('0.00');
 
-  const allClasses = [
-    { id: '1', title: 'CS2510 30198 Fundamentals of Computer Science 2 SEC 01', grade: 'B+', color: '#FFFF00', semester: 'Fall 2023', credits: 4 },
-    { id: '2', title: 'FINA2201 30396 Financial Management SEC 01', grade: 'A+', color: '#00FF00', semester: 'Fall 2023', credits: 3 },
-    { id: '3', title: 'CS3500 40039 Object-Oriented Design SEC 01', grade: 'C', color: '#FF0000', semester: 'Spring 2024', credits: 4 },
-    { id: '4', title: 'MATH2331 31477 Linear Algebra SEC 02', grade: 'D-', color: '#00FFFF', semester: 'Spring 2024', credits: 3 },
-  ];
-
-  const semesters = ['All', ...new Set(allClasses.map(c => c.semester))];
-
-  const filteredAndSortedClasses = useMemo(() => {
-    let filtered = selectedSemester === 'All'
-      ? allClasses
-      : allClasses.filter(c => c.semester === selectedSemester);
-
-    return filtered.sort((a, b) => {
-      if (sortOrder === 'asc') {
-        return a.title.localeCompare(b.title);
-      } else {
-        return b.title.localeCompare(a.title);
+  const fetchUserGPA = useCallback(async () => {
+    try {
+      const user = await getCurrentUser();
+      if (user && user.gpa !== undefined) {
+        setActualGPA(user.gpa);
+        setTotalCredits(user.totalCredits || 0); // Assuming the user object has a totalCredits field
       }
-    });
-  }, [selectedSemester, sortOrder]);
-
-  const calculateGPA = (classes) => {
-    const gradePoints = {
-      'A+': 4.0, 'A': 4.0, 'A-': 3.7, 'B+': 3.3, 'B': 3.0, 'B-': 2.7,
-      'C+': 2.3, 'C': 2.0, 'C-': 1.7, 'D+': 1.3, 'D': 1.0, 'D-': 0.7, 'F': 0
-    };
-    let totalPoints = 0;
-    let totalCredits = 0;
-    classes.forEach(cls => {
-      totalPoints += gradePoints[cls.grade] * cls.credits;
-      totalCredits += cls.credits;
-    });
-    return totalCredits > 0 ? (totalPoints / totalCredits).toFixed(2) : '0.00';
-  };
-
-  const gpa = calculateGPA(filteredAndSortedClasses);
+    } catch (error) {
+      console.error("Error fetching user GPA:", error);
+    }
+  }, []);
 
   useEffect(() => {
-    if (initialLoadRef.current) {
-      let start = 0;
-      const end = parseFloat(gpa);
+    fetchUserGPA();
+  }, [fetchUserGPA]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchUserGPA();
+    }, [fetchUserGPA])
+  );
+
+  useEffect(() => {
+    if (initialLoadRef.current || actualGPA !== parseFloat(displayedGPA)) {
+      let start = initialLoadRef.current ? 0 : parseFloat(displayedGPA);
+      const end = actualGPA;
       const duration = 30;
       const interval = 1;
       const step = (end - start) / (duration / interval);
@@ -74,105 +90,122 @@ const GPAScreen = () => {
         start += step;
         if (start >= end) {
           clearInterval(timer);
-          setDisplayedGPA(gpa);
+          setDisplayedGPA(end.toFixed(2));
           initialLoadRef.current = false;
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         } else {
           setDisplayedGPA(start.toFixed(2));
         }
       }, interval);
 
       return () => clearInterval(timer);
-    } else {
-      setDisplayedGPA(gpa);
     }
-  }, [gpa]);
+  }, [actualGPA]);
+
+  const calculateWhatIfGPA = useCallback((currentGPA, totalCredits, hypotheticalGrades) => {
+    const gradePoints = {
+      'A+': 4.0, 'A': 4.0, 'A-': 3.7, 'B+': 3.3, 'B': 3.0, 'B-': 2.7,
+      'C+': 2.3, 'C': 2.0, 'C-': 1.7, 'D+': 1.3, 'D': 1.0, 'D-': 0.7, 'F': 0
+    };
+
+    let totalPoints = currentGPA * totalCredits;
+    let newTotalCredits = totalCredits;
+
+    hypotheticalGrades.forEach(grade => {
+      if (gradePoints[grade.grade] !== undefined) {
+        totalPoints += gradePoints[grade.grade] * grade.credits;
+        newTotalCredits += grade.credits;
+      }
+    });
+
+    return newTotalCredits > 0 ? (totalPoints / newTotalCredits).toFixed(2) : currentGPA.toFixed(2);
+  }, []);
 
   useEffect(() => {
-    const allGrades = [...filteredAndSortedClasses, ...hypotheticalGrades];
-    const newGPA = calculateGPA(allGrades);
+    const newGPA = calculateWhatIfGPA(actualGPA, totalCredits, hypotheticalGrades);
     setWhatIfGPA(newGPA);
-  }, [hypotheticalGrades, filteredAndSortedClasses]);
+  }, [hypotheticalGrades, actualGPA, totalCredits, calculateWhatIfGPA]);
 
-  const addHypotheticalGrade = () => {
+  const addHypotheticalGrade = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setHypotheticalGrades([...hypotheticalGrades, { id: Date.now().toString(), grade: 'A', credits: 3 }]);
-  };
+  }, [hypotheticalGrades]);
 
-  const updateHypotheticalGrade = (id, field, value) => {
+  const updateHypotheticalGrade = useCallback((id, field, value) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setHypotheticalGrades(
       hypotheticalGrades.map(grade =>
-        grade.id === id ? { ...grade, [field]: value } : grade
+        grade.id === id ? { ...grade, [field]: field === 'credits' ? parseInt(value) || 0 : value } : grade
       )
     );
-  };
+  }, [hypotheticalGrades]);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView>
-        <View style={styles.topSection}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="chevron-back" size={24} color="white" />
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
+      <LinearGradient
+        colors={gradientColors[0]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradientBackground}
+      >
+        <View style={[styles.topSection, { paddingTop: insets.top }]}>
+          <TouchableOpacity
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              router.back();
+            }}
+            style={styles.backButton}
+          >
+            <Ionicons name="chevron-back" size={32} color={colors.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>GPA</Text>
           <View style={styles.placeholder} />
         </View>
-        <View style={styles.gpaSection}>
-          <Text style={styles.gpa}>{displayedGPA}</Text>
-          <Text style={styles.gpaSubtitle}>*Rounded</Text>
-        </View>
-        <View style={styles.controls}>
-          <TouchableOpacity
-            style={styles.controlButton}
-            onPress={() => {
-              const currentIndex = semesters.indexOf(selectedSemester);
-              const nextIndex = (currentIndex + 1) % semesters.length;
-              setSelectedSemester(semesters[nextIndex]);
-            }}
-          >
-            <Text style={styles.controlText}>{`${selectedSemester} ⌄`}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.controlButton}
-            onPress={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
-          >
-            <Text style={styles.controlText}>{`Sort ${sortOrder === 'asc' ? '↑' : '↓'}`}</Text>
-          </TouchableOpacity>
-        </View>
-        <FlatList
-          data={filteredAndSortedClasses}
-          renderItem={({ item }) => <ClassItem item={item} />}
-          keyExtractor={item => item.id}
-          contentContainerStyle={styles.listContainer}
-          scrollEnabled={false}
-        />
+        <ScrollView
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: insets.bottom + 20 }
+          ]}
+        >
+          <View style={styles.gpaSection}>
+            <Text style={styles.gpa}>{displayedGPA}</Text>
+            <Text style={styles.gpaSubtitle}>Current GPA</Text>
+          </View>
 
-        <View style={styles.whatIfSection}>
-          <Text style={styles.whatIfTitle}>What If Calculator</Text>
-          <Text style={styles.whatIfGPA}>Projected GPA: {whatIfGPA}</Text>
-          {hypotheticalGrades.map((grade, index) => (
-            <View key={grade.id} style={styles.hypotheticalGradeRow}>
-              <Text style={styles.hypotheticalGradeText}>Class {index + 1}:</Text>
-              <TextInput
-                style={styles.gradeInput}
-                value={grade.grade}
-                onChangeText={(newGrade) => updateHypotheticalGrade(grade.id, 'grade', newGrade)}
-                placeholder="Grade"
-                placeholderTextColor="#888"
-              />
-              <TextInput
-                style={styles.creditsInput}
-                value={grade.credits.toString()}
-                onChangeText={(newCredits) => updateHypotheticalGrade(grade.id, 'credits', parseInt(newCredits) || 0)}
-                placeholder="Credits"
-                placeholderTextColor="#888"
-                keyboardType="numeric"
-              />
-            </View>
-          ))}
-          <TouchableOpacity style={styles.addGradeButton} onPress={addHypotheticalGrade}>
-            <Text style={styles.addGradeButtonText}>Add Hypothetical Grade</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+          <LinearGradient
+            colors={gradientColors[1]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.whatIfSection}
+          >
+            <Text style={styles.whatIfTitle}>What If Calculator</Text>
+            <Text style={styles.whatIfGPA}>Projected GPA: {whatIfGPA}</Text>
+            {hypotheticalGrades.map((grade, index) => (
+              <View key={grade.id} style={styles.hypotheticalGradeRow}>
+                <Text style={styles.hypotheticalGradeText}>Class {index + 1}:</Text>
+                <TextInput
+                  style={styles.gradeInput}
+                  value={grade.grade}
+                  onChangeText={(newGrade) => updateHypotheticalGrade(grade.id, 'grade', newGrade)}
+                  placeholder="Grade"
+                  placeholderTextColor={colors.textSecondary}
+                />
+                <TextInput
+                  style={styles.creditsInput}
+                  value={grade.credits.toString()}
+                  onChangeText={(newCredits) => updateHypotheticalGrade(grade.id, 'credits', newCredits)}
+                  placeholder="Credits"
+                  placeholderTextColor={colors.textSecondary}
+                  keyboardType="numeric"
+                />
+              </View>
+            ))}
+            <TouchableOpacity style={styles.addGradeButton} onPress={addHypotheticalGrade}>
+              <Text style={styles.addGradeButtonText}>Add Hypothetical Grade</Text>
+            </TouchableOpacity>
+          </LinearGradient>
+        </ScrollView>
+      </LinearGradient>
     </SafeAreaView>
   );
 };
@@ -180,37 +213,36 @@ const GPAScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000',
+    backgroundColor: colors.primary,
+  },
+  gradientBackground: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
   topSection: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 10,
+    paddingBottom: 15,
   },
   backButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 10,
+    width: 45,
+    height: 45,
+    borderRadius: 16,
     backgroundColor: 'rgba(255,255,255,0.3)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 15,
-  },
-  backButtonText: {
-    fontSize: 30,
-    color: '#fff',
   },
   headerTitle: {
-    color: 'white',
+    color: colors.text,
     fontSize: 28,
     fontWeight: 'bold',
   },
   placeholder: {
-    width: 50,
-    height: 50,
+    width: 40,
   },
   gpaSection: {
     alignItems: 'center',
@@ -218,12 +250,12 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   gpa: {
-    color: 'white',
+    color: colors.text,
     fontSize: 120,
     fontWeight: 'bold',
   },
   gpaSubtitle: {
-    color: 'gray',
+    color: colors.textSecondary,
     fontSize: 16,
   },
   controls: {
@@ -233,18 +265,19 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
   },
   controlButton: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
     padding: 10,
+    borderRadius: 8,
   },
   controlText: {
-    color: 'white',
-    fontSize: 20,
+    color: colors.text,
+    fontSize: 16,
   },
   listContainer: {
     paddingHorizontal: 20,
   },
   classItem: {
     flexDirection: 'row',
-    backgroundColor: '#333333',
     borderRadius: 10,
     marginBottom: 10,
     overflow: 'hidden',
@@ -262,29 +295,28 @@ const styles = StyleSheet.create({
   },
   classTitle: {
     flex: 1,
-    color: 'white',
+    color: colors.text,
     fontSize: 16,
   },
   classInfo: {
-    color: 'white',
+    color: colors.text,
     fontSize: 16,
     fontWeight: 'bold',
     marginLeft: 10,
   },
   whatIfSection: {
     padding: 20,
-    backgroundColor: '#222',
-    borderRadius: 10,
+    borderRadius: 15,
     margin: 20,
   },
   whatIfTitle: {
-    color: 'white',
+    color: colors.text,
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 10,
   },
   whatIfGPA: {
-    color: 'white',
+    color: colors.text,
     fontSize: 18,
     marginBottom: 20,
   },
@@ -295,36 +327,37 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   hypotheticalGradeText: {
-    color: 'white',
+    color: colors.text,
     fontSize: 16,
     width: 80,
   },
   gradeInput: {
-    backgroundColor: '#333',
-    color: 'white',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    color: colors.text,
     padding: 10,
-    borderRadius: 5,
+    borderRadius: 8,
     width: 80,
     textAlign: 'center',
   },
   creditsInput: {
-    backgroundColor: '#333',
-    color: 'white',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    color: colors.text,
     padding: 10,
-    borderRadius: 5,
+    borderRadius: 8,
     width: 80,
     textAlign: 'center',
   },
   addGradeButton: {
-    backgroundColor: '#FFF',
-    padding: 10,
-    borderRadius: 5,
+    backgroundColor: colors.accent,
+    padding: 12,
+    borderRadius: 8,
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 15,
   },
   addGradeButtonText: {
-    color: 'black',
+    color: colors.primary,
     fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 

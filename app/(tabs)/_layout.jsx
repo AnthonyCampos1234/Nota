@@ -1,24 +1,28 @@
 import React from "react";
 import { StatusBar } from "expo-status-bar";
 import { Redirect, Tabs } from "expo-router";
-import { Image, Text, View, TouchableOpacity, StyleSheet, Platform } from "react-native";
+import { View, TouchableOpacity, StyleSheet, Platform } from "react-native";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { icons } from "../../constants";
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Loader } from "../../components";
 import { useGlobalContext } from "../../context/GlobalProvider";
 
-const TabIcon = ({ icon, color, name, focused }) => {
+const duoColors = {
+  primary: '#4A90E2',
+  secondary: '#FFC800',
+  background: '#121212',
+  surface: '#000000',
+  text: '#FFFFFF',
+  textSecondary: '#AAAAAA',
+  error: '#FF4B4B',
+};
+
+const TabIcon = ({ icon, color, focused }) => {
   return (
-    <View style={styles.tabIconContainer}>
-      <Image
-        source={icon}
-        resizeMode="contain"
-        style={[styles.tabIcon, { tintColor: color }]}
-      />
-      <Text style={[styles.tabLabel, { color, fontWeight: focused ? "600" : "400" }]}>
-        {name}
-      </Text>
+    <View style={[styles.tabIconContainer, focused ? styles.tabIconContainerFocused : null]}>
+      <Ionicons name={icon} size={32} color={color} />
     </View>
   );
 };
@@ -41,13 +45,14 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
   };
 
   return (
-    <View style={[
-      styles.tabBar,
-      { paddingBottom: Platform.OS === 'ios' ? insets.bottom : 10 }
-    ]}>
+    <View
+      style={[
+        styles.tabBar,
+        { paddingBottom: insets.bottom + 5 }
+      ]}
+    >
       {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
-        const label = options.tabBarLabel ?? options.title ?? route.name;
         const isFocused = state.index === index;
 
         return (
@@ -58,14 +63,11 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
             accessibilityLabel={options.tabBarAccessibilityLabel}
             testID={options.tabBarTestID}
             onPress={() => handlePress(route, isFocused)}
-            style={[
-              styles.tabButton,
-              isFocused && styles.tabButtonFocused
-            ]}
+            style={styles.tabButton}
           >
             {options.tabBarIcon({
               focused: isFocused,
-              color: isFocused ? "#FFFFFF" : "#CDCDE0",
+              color: isFocused ? duoColors.primary : duoColors.textSecondary,
               size: 24
             })}
           </TouchableOpacity>
@@ -81,7 +83,7 @@ const TabLayout = () => {
   if (!loading && !isLogged) return <Redirect href="/sign-in" />;
 
   return (
-    <>
+    <View style={styles.container}>
       <Tabs
         screenOptions={{
           headerShown: false,
@@ -91,12 +93,10 @@ const TabLayout = () => {
         <Tabs.Screen
           name="insight"
           options={{
-            title: "Insight",
             tabBarIcon: ({ color, focused }) => (
               <TabIcon
-                icon={icons.search}
+                icon="search-outline"
                 color={color}
-                name="Insight"
                 focused={focused}
               />
             ),
@@ -105,12 +105,10 @@ const TabLayout = () => {
         <Tabs.Screen
           name="home"
           options={{
-            title: "Home",
             tabBarIcon: ({ color, focused }) => (
               <TabIcon
-                icon={icons.home}
+                icon="home-outline"
                 color={color}
-                name="Home"
                 focused={focused}
               />
             ),
@@ -119,12 +117,10 @@ const TabLayout = () => {
         <Tabs.Screen
           name="settings"
           options={{
-            title: "Settings",
             tabBarIcon: ({ color, focused }) => (
               <TabIcon
-                icon={icons.profile}
+                icon="settings-outline"
                 color={color}
-                name="Settings"
                 focused={focused}
               />
             ),
@@ -132,39 +128,36 @@ const TabLayout = () => {
         />
       </Tabs>
       <Loader isLoading={loading} />
-      <StatusBar backgroundColor="#161622" style="light" />
-    </>
+      <StatusBar backgroundColor={duoColors.background} style="light" />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: '#000000',
-    borderTopWidth: 1,
-    borderTopColor: '#222222',
+    backgroundColor: duoColors.surface,
+    paddingTop: 3,
   },
   tabButton: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 10,
-  },
-  tabButtonFocused: {
-    backgroundColor: '#222222',
-    borderRadius: 10,
+    paddingVertical: 6,
   },
   tabIconContainer: {
     alignItems: 'center',
     justifyContent: 'center',
+    width: 128,
+    height: 48,
+    borderRadius: 8,
   },
-  tabIcon: {
-    width: 20,
-    height: 20,
-    marginBottom: 4,
-  },
-  tabLabel: {
-    fontSize: 12,
+  tabIconContainerFocused: {
+    backgroundColor: `${duoColors.primary}20`,
   },
 });
 

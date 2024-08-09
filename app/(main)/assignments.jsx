@@ -1,8 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, TextInput, Alert, Dimensions } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+const colors = {
+  primary: '#000000',
+  secondary: '#4A90E2',
+  tertiary: '#50C878',
+  quaternary: '#9B59B6',
+  accent: '#FF69B4',
+  text: '#FFFFFF',
+  textSecondary: '#CCCCCC',
+  gradientStart: '#000000',
+  gradientMiddle1: '#0F2027',
+  gradientMiddle2: '#203A43',
+  gradientEnd: '#2C5364',
+};
 
 const AssignmentItem = ({ item, onPress }) => (
   <TouchableOpacity onPress={() => onPress(item)} style={styles.assignmentItem}>
@@ -118,6 +136,7 @@ const EditAssignmentModal = ({ visible, assignment, onSave, onCancel }) => {
 
 const AssignmentsScreen = () => {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [assignments, setAssignments] = useState([
     {
       id: '1',
@@ -135,17 +154,19 @@ const AssignmentsScreen = () => {
   const [selectedAssignment, setSelectedAssignment] = useState(null);
   const [sortOrder, setSortOrder] = useState('asc');
 
-  const handleAssignmentPress = (assignment) => {
+  const handleAssignmentPress = useCallback((assignment) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.medium);
     setSelectedAssignment(assignment);
     setActionModalVisible(true);
-  };
+  }, []);
 
   const getRandomColor = () => {
     const colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
     return colors[Math.floor(Math.random() * colors.length)];
   };
 
-  const handleAddAssignment = () => {
+  const handleAddAssignment = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const newAssignment = {
       id: '',
       classTitle: '',
@@ -156,14 +177,16 @@ const AssignmentsScreen = () => {
     };
     setSelectedAssignment(newAssignment);
     setEditModalVisible(true);
-  };
+  }, []);
 
-  const handleEditAssignment = () => {
+  const handleEditAssignment = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.medium);
     setActionModalVisible(false);
     setEditModalVisible(true);
-  };
+  }, []);
 
-  const handleDeleteAssignment = () => {
+  const handleDeleteAssignment = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Alert.alert(
       "Delete Assignment",
       "Are you sure you want to delete this assignment?",
@@ -181,9 +204,15 @@ const AssignmentsScreen = () => {
         }
       ]
     );
-  };
+  }, [assignments, selectedAssignment]);
 
-  const handleSaveAssignment = (updatedAssignment) => {
+  const handleBackPress = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    navigation.goBack();
+  }, [navigation]);
+
+  const handleSaveAssignment = useCallback((updatedAssignment) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.medium);
     if (updatedAssignment.id) {
       setAssignments(assignments.map(a => a.id === updatedAssignment.id ? updatedAssignment : a));
     } else {
@@ -196,9 +225,10 @@ const AssignmentsScreen = () => {
     }
     setEditModalVisible(false);
     setSelectedAssignment(null);
-  };
+  }, [assignments]);
 
-  const handleSort = () => {
+  const handleSort = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.medium);
     const newSortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
     setSortOrder(newSortOrder);
     const sortedAssignments = [...assignments].sort((a, b) => {
@@ -209,47 +239,52 @@ const AssignmentsScreen = () => {
       }
     });
     setAssignments(sortedAssignments);
-  };
+  }, [sortOrder, assignments]);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.topSection}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="chevron-back" size={24} color="white" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Assignments</Text>
-        <View style={styles.placeholder} />
-      </View>
-      <View style={styles.controlsSection}>
-        <TouchableOpacity onPress={handleAddAssignment} style={styles.addButton}>
-          <Ionicons name="add-circle-outline" size={32} color="white" />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={handleSort} style={styles.sortButton}>
-          <Text style={styles.sortText}>Sort {sortOrder === 'asc' ? '↑' : '↓'}</Text>
-        </TouchableOpacity>
-      </View>
-      <FlatList
-        data={assignments}
-        renderItem={({ item }) => <AssignmentItem item={item} onPress={handleAssignmentPress} />}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.listContainer}
-      />
-      <AssignmentActionModal
-        visible={actionModalVisible}
-        assignment={selectedAssignment}
-        onClose={() => setActionModalVisible(false)}
-        onEdit={handleEditAssignment}
-        onDelete={handleDeleteAssignment}
-      />
-      <EditAssignmentModal
-        visible={editModalVisible}
-        assignment={selectedAssignment}
-        onSave={handleSaveAssignment}
-        onCancel={() => {
-          setEditModalVisible(false);
-          setSelectedAssignment(null);
-        }}
-      />
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
+      <LinearGradient
+        colors={[colors.gradientStart, colors.gradientMiddle1, colors.gradientMiddle2, colors.gradientEnd]}
+        style={styles.gradientBackground}
+      >
+        <View style={[styles.topSection, { paddingTop: insets.top }]}>
+          <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
+            <Ionicons name="chevron-back" size={32} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Assignments</Text>
+          <View style={styles.placeholder} />
+        </View>
+        <View style={styles.controlsSection}>
+          <TouchableOpacity onPress={handleAddAssignment} style={styles.addButton}>
+            <Ionicons name="add-circle-outline" size={32} color={colors.text} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleSort} style={styles.sortButton}>
+            <Text style={styles.sortText}>Sort {sortOrder === 'asc' ? '↑' : '↓'}</Text>
+          </TouchableOpacity>
+        </View>
+        <FlatList
+          data={assignments}
+          renderItem={({ item }) => <AssignmentItem item={item} onPress={handleAssignmentPress} />}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.listContainer}
+        />
+        <AssignmentActionModal
+          visible={actionModalVisible}
+          assignment={selectedAssignment}
+          onClose={() => setActionModalVisible(false)}
+          onEdit={handleEditAssignment}
+          onDelete={handleDeleteAssignment}
+        />
+        <EditAssignmentModal
+          visible={editModalVisible}
+          assignment={selectedAssignment}
+          onSave={handleSaveAssignment}
+          onCancel={() => {
+            setEditModalVisible(false);
+            setSelectedAssignment(null);
+          }}
+        />
+      </LinearGradient>
     </SafeAreaView>
   );
 };
@@ -257,38 +292,35 @@ const AssignmentsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000',
+    backgroundColor: colors.primary,
+  },
+  gradientBackground: {
+    flex: 1,
   },
   topSection: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 10,
     paddingBottom: 10,
   },
   backButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 10,
+    width: 45,
+    height: 45,
+    borderRadius: 16,
     backgroundColor: 'rgba(255,255,255,0.3)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 15,
-  },
-  backButtonText: {
-    fontSize: 30,
-    color: '#fff',
   },
   headerTitle: {
     flex: 1,
     textAlign: 'center',
-    color: 'white',
+    color: colors.text,
     fontSize: 28,
     fontWeight: 'bold',
+    marginLeft: 10,
   },
   placeholder: {
-    width: 50,
-    height: 50,
+    width: 40,
   },
   controlsSection: {
     flexDirection: 'row',
@@ -310,18 +342,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sortText: {
-    color: 'white',
+    color: colors.text,
     fontSize: 20,
   },
   listContainer: {
     paddingHorizontal: 20,
+    paddingBottom: 20,
   },
   assignmentItem: {
     flexDirection: 'row',
-    backgroundColor: '#333333',
-    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 16,
     marginBottom: 10,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: colors.secondary,
   },
   colorDot: {
     width: 10,
@@ -332,18 +367,18 @@ const styles = StyleSheet.create({
     padding: 15,
   },
   classTitle: {
-    color: 'white',
+    color: colors.textSecondary,
     fontSize: 12,
     marginBottom: 5,
   },
   assignmentTitle: {
-    color: 'white',
+    color: colors.text,
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 5,
   },
   dueDate: {
-    color: 'white',
+    color: colors.textSecondary,
     fontSize: 14,
   },
   modalContainer: {
@@ -353,77 +388,85 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
-    backgroundColor: '#333',
-    borderRadius: 10,
+    backgroundColor: colors.primary,
+    borderRadius: 16,
     padding: 20,
     width: '80%',
+    borderWidth: 1,
+    borderColor: colors.secondary,
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 10,
+    color: colors.text,
+    marginBottom: 20,
+    textAlign: 'center',
   },
   modalText: {
     fontSize: 16,
-    color: 'white',
-    marginBottom: 5,
-  },
-  closeButton: {
-    backgroundColor: '#555',
-    padding: 10,
-    borderRadius: 5,
-    alignSelf: 'flex-end',
-    marginTop: 10,
-  },
-  closeButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
+    color: colors.text,
+    marginBottom: 10,
   },
   input: {
-    backgroundColor: '#444',
-    color: 'white',
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 10,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    color: colors.text,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 15,
+    fontSize: 16,
   },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 10,
+    marginTop: 20,
   },
   saveButton: {
-    backgroundColor: '#4CAF50',
-    padding: 10,
-    borderRadius: 5,
+    backgroundColor: colors.tertiary,
+    padding: 12,
+    borderRadius: 8,
     flex: 1,
-    marginRight: 5,
+    marginRight: 10,
   },
   cancelButton: {
-    backgroundColor: '#f44336',
-    padding: 10,
-    borderRadius: 5,
+    backgroundColor: colors.accent,
+    padding: 12,
+    borderRadius: 8,
     flex: 1,
-    marginLeft: 5,
+    marginLeft: 10,
   },
   editButton: {
-    backgroundColor: '#4CAF50',
-    padding: 10,
-    borderRadius: 5,
+    backgroundColor: colors.tertiary,
+    padding: 12,
+    borderRadius: 8,
     flex: 1,
-    marginRight: 5,
+    marginRight: 10,
   },
   deleteButton: {
-    backgroundColor: '#f44336',
-    padding: 10,
-    borderRadius: 5,
+    backgroundColor: colors.accent,
+    padding: 12,
+    borderRadius: 8,
     flex: 1,
-    marginLeft: 5,
+    marginLeft: 10,
   },
   buttonText: {
-    color: 'white',
+    color: colors.text,
     textAlign: 'center',
     fontWeight: 'bold',
+    fontSize: 16,
+  },
+  closeButton: {
+    backgroundColor: colors.secondary,
+    padding: 12,
+    borderRadius: 8,
+    alignSelf: 'center',
+    marginTop: 20,
+    width: '100%',
+  },
+  closeButtonText: {
+    color: colors.text,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    fontSize: 16,
   },
 });
 

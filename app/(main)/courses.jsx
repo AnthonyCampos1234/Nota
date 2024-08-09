@@ -1,18 +1,47 @@
 import { router } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { View, FlatList, TouchableOpacity, Text, StyleSheet, Modal, TextInput, Alert } from "react-native";
-import { useState, useEffect } from "react";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { View, FlatList, TouchableOpacity, Text, StyleSheet, Modal, TextInput, Alert, Dimensions } from "react-native";
+import { useState, useEffect, useCallback } from "react";
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
 
 import { useGlobalContext } from "../../context/GlobalProvider";
 
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+const colors = {
+  primary: '#000000',
+  secondary: '#4A90E2',
+  tertiary: '#50C878',
+  quaternary: '#9B59B6',
+  accent: '#FF69B4',
+  text: '#FFFFFF',
+  textSecondary: '#CCCCCC',
+  gradientStart: '#000000',
+  gradientMiddle1: '#0F2027',
+  gradientMiddle2: '#203A43',
+  gradientEnd: '#2C5364',
+};
+
+const gradientColors = [
+  [colors.gradientStart, colors.gradientMiddle1, colors.gradientMiddle2, colors.gradientEnd],
+  [colors.secondary, colors.quaternary],
+  [colors.tertiary, colors.accent],
+];
+
 const CourseItem = ({ item, onPress }) => (
-  <TouchableOpacity onPress={() => onPress(item)} style={styles.courseItem}>
-    <View style={[styles.colorDot, { backgroundColor: item.color }]} />
-    <View style={styles.courseContent}>
+  <LinearGradient
+    colors={[colors.gradientMiddle1, colors.gradientMiddle2]}
+    start={{ x: 0, y: 0 }}
+    end={{ x: 1, y: 1 }}
+    style={styles.courseItem}
+  >
+    <TouchableOpacity onPress={() => onPress(item)} style={styles.courseContent}>
+      <View style={[styles.colorDot, { backgroundColor: item.color }]} />
       <Text style={styles.courseTitle} numberOfLines={2}>{item.title}</Text>
-    </View>
-  </TouchableOpacity>
+    </TouchableOpacity>
+  </LinearGradient>
 );
 
 const CourseActionModal = ({ visible, course, onClose, onEdit, onDelete }) => (
@@ -70,14 +99,14 @@ const EditCourseModal = ({ visible, course, onSave, onCancel }) => {
           <TextInput
             style={styles.input}
             placeholder="Course Title"
-            placeholderTextColor="#999"
+            placeholderTextColor={colors.textSecondary}
             value={title}
             onChangeText={setTitle}
           />
           <TextInput
             style={[styles.input, styles.descriptionInput]}
             placeholder="Course Description"
-            placeholderTextColor="#999"
+            placeholderTextColor={colors.textSecondary}
             value={description}
             onChangeText={setDescription}
             multiline
@@ -98,6 +127,7 @@ const EditCourseModal = ({ visible, course, onSave, onCancel }) => {
 
 const Courses = () => {
   const { user, setUser, setIsLogged } = useGlobalContext();
+  const insets = useSafeAreaInsets();
   const [courses, setCourses] = useState([
     { id: '1', title: "CS2510 30198 Fundamentals of Computer Science 2 SEC 01", color: '#FF0000', description: "Introduction to object-oriented design and programming." },
     { id: '2', title: "FINA2201 30396 Financial Management SEC 01", color: '#00FF00', description: "Basics of financial management and analysis." },
@@ -110,17 +140,19 @@ const Courses = () => {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [sortOrder, setSortOrder] = useState('asc');
 
-  const handleCoursePress = (course) => {
+  const handleCoursePress = useCallback((course) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.medium);
     setSelectedCourse(course);
     setActionModalVisible(true);
-  };
+  }, []);
 
   const getRandomColor = () => {
     const colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
     return colors[Math.floor(Math.random() * colors.length)];
   };
 
-  const handleAddCourse = () => {
+  const handleAddCourse = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const newCourse = {
       id: '',
       title: '',
@@ -129,14 +161,16 @@ const Courses = () => {
     };
     setSelectedCourse(newCourse);
     setEditModalVisible(true);
-  };
+  }, []);
 
-  const handleEditCourse = () => {
+  const handleEditCourse = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.medium);
     setActionModalVisible(false);
     setEditModalVisible(true);
-  };
+  }, []);
 
-  const handleDeleteCourse = () => {
+  const handleDeleteCourse = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Alert.alert(
       "Delete Course",
       "Are you sure you want to delete this course?",
@@ -154,9 +188,10 @@ const Courses = () => {
         }
       ]
     );
-  };
+  }, [courses, selectedCourse]);
 
-  const handleSaveCourse = (updatedCourse) => {
+  const handleSaveCourse = useCallback((updatedCourse) => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     if (updatedCourse.id) {
       setCourses(courses.map(c => c.id === updatedCourse.id ? updatedCourse : c));
     } else {
@@ -169,9 +204,10 @@ const Courses = () => {
     }
     setEditModalVisible(false);
     setSelectedCourse(null);
-  };
+  }, [courses]);
 
-  const handleSort = () => {
+  const handleSort = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.medium);
     const newSortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
     setSortOrder(newSortOrder);
     const sortedCourses = [...courses].sort((a, b) => {
@@ -182,47 +218,64 @@ const Courses = () => {
       }
     });
     setCourses(sortedCourses);
-  };
+  }, [courses, sortOrder]);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.topSection}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="chevron-back" size={24} color="white" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Courses</Text>
-        <View style={styles.placeholder} />
-      </View>
-      <View style={styles.controlsSection}>
-        <TouchableOpacity onPress={handleAddCourse} style={styles.addButton}>
-          <Ionicons name="add-circle-outline" size={32} color="white" />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={handleSort} style={styles.sortButton}>
-          <Text style={styles.sortText}>Sort {sortOrder === 'asc' ? '↑' : '↓'}</Text>
-        </TouchableOpacity>
-      </View>
-      <FlatList
-        data={courses}
-        renderItem={({ item }) => <CourseItem item={item} onPress={handleCoursePress} />}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.listContainer}
-      />
-      <CourseActionModal
-        visible={actionModalVisible}
-        course={selectedCourse}
-        onClose={() => setActionModalVisible(false)}
-        onEdit={handleEditCourse}
-        onDelete={handleDeleteCourse}
-      />
-      <EditCourseModal
-        visible={editModalVisible}
-        course={selectedCourse}
-        onSave={handleSaveCourse}
-        onCancel={() => {
-          setEditModalVisible(false);
-          setSelectedCourse(null);
-        }}
-      />
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
+      <LinearGradient
+        colors={gradientColors[0]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradientBackground}
+      >
+        <View style={[styles.topSection, { paddingTop: insets.top }]}>
+          <TouchableOpacity
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              router.back();
+            }}
+            style={styles.backButton}
+          >
+            <Ionicons name="chevron-back" size={32} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Courses</Text>
+          <View style={styles.placeholder} />
+        </View>
+        <View style={styles.controlsSection}>
+          <TouchableOpacity onPress={handleAddCourse} style={styles.addButton}>
+            <Ionicons name="add-circle-outline" size={32} color={colors.text} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleSort} style={styles.sortButton}>
+            <Text style={styles.sortText}>Sort {sortOrder === 'asc' ? '↑' : '↓'}</Text>
+          </TouchableOpacity>
+        </View>
+        <FlatList
+          data={courses}
+          renderItem={({ item }) => <CourseItem item={item} onPress={handleCoursePress} />}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.listContainer}
+        />
+        <CourseActionModal
+          visible={actionModalVisible}
+          course={selectedCourse}
+          onClose={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.medium);
+            setActionModalVisible(false);
+          }}
+          onEdit={handleEditCourse}
+          onDelete={handleDeleteCourse}
+        />
+        <EditCourseModal
+          visible={editModalVisible}
+          course={selectedCourse}
+          onSave={handleSaveCourse}
+          onCancel={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.medium);
+            setEditModalVisible(false);
+            setSelectedCourse(null);
+          }}
+        />
+      </LinearGradient>
     </SafeAreaView>
   );
 };
@@ -230,38 +283,33 @@ const Courses = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: colors.primary,
+  },
+  gradientBackground: {
+    flex: 1,
   },
   topSection: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 10,
+    paddingBottom: 15,
   },
   backButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 10,
+    width: 45,
+    height: 45,
+    borderRadius: 16,
     backgroundColor: 'rgba(255,255,255,0.3)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 15,
-  },
-  backButtonText: {
-    fontSize: 30,
-    color: '#fff',
   },
   headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    color: 'white',
+    color: colors.text,
     fontSize: 28,
     fontWeight: 'bold',
   },
   placeholder: {
-    width: 50,
-    height: 50,
+    width: 40,
   },
   controlsSection: {
     flexDirection: 'row',
@@ -277,35 +325,37 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sortButton: {
-    width: 80,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    padding: 10,
+    borderRadius: 8,
   },
   sortText: {
-    color: 'white',
-    fontSize: 20,
+    color: colors.text,
+    fontSize: 16,
   },
   listContainer: {
     paddingHorizontal: 20,
+    paddingBottom: 20,
   },
   courseItem: {
-    flexDirection: 'row',
-    backgroundColor: '#333333',
     borderRadius: 10,
     marginBottom: 10,
     overflow: 'hidden',
   },
-  colorDot: {
-    width: 10,
-    height: '100%',
-  },
   courseContent: {
-    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: 15,
   },
+  colorDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 10,
+  },
   courseTitle: {
-    color: 'white',
+    flex: 1,
+    color: colors.text,
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -316,7 +366,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalView: {
-    backgroundColor: '#333',
+    backgroundColor: colors.gradientMiddle1,
     borderRadius: 20,
     padding: 35,
     alignItems: 'center',
@@ -335,12 +385,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 20,
     fontWeight: 'bold',
-    color: 'white',
+    color: colors.text,
   },
   modalDescription: {
     marginBottom: 20,
     textAlign: 'center',
-    color: 'white',
+    color: colors.text,
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -355,30 +405,30 @@ const styles = StyleSheet.create({
     minWidth: 80,
   },
   editButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: colors.tertiary,
   },
   deleteButton: {
-    backgroundColor: '#f44336',
+    backgroundColor: colors.accent,
   },
   closeButton: {
-    backgroundColor: '#555',
+    backgroundColor: colors.secondary,
     marginTop: 10,
   },
   saveButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: colors.tertiary,
   },
   cancelButton: {
-    backgroundColor: '#f44336',
+    backgroundColor: colors.accent,
   },
   textStyle: {
-    color: 'white',
+    color: colors.text,
     fontWeight: 'bold',
     textAlign: 'center',
   },
   input: {
-    backgroundColor: '#444',
-    color: 'white',
-    borderRadius: 5,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    color: colors.text,
+    borderRadius: 8,
     padding: 10,
     marginBottom: 10,
     width: '100%',
