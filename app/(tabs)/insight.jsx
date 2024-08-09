@@ -9,7 +9,7 @@ import {
   TextInput,
   Alert,
   Dimensions,
-  Animated,
+  Modal,
 } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from '@expo/vector-icons';
@@ -34,46 +34,33 @@ const colors = {
   gradientEnd: '#2C5364',
 };
 
-const Header = ({ userName, insightPoints }) => {
+const Header = ({ userName, onChatPress }) => {
   const insets = useSafeAreaInsets();
-  const [bounceAnim] = useState(new Animated.Value(1));
-
-  const animateInsightPoints = useCallback(() => {
-    Animated.sequence([
-      Animated.timing(bounceAnim, { toValue: 1.1, duration: 200, useNativeDriver: true }),
-      Animated.spring(bounceAnim, { toValue: 1, friction: 4, useNativeDriver: true })
-    ]).start();
-  }, [bounceAnim]);
 
   return (
     <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
       <View style={styles.userInfo}>
         <Text style={styles.headerTitle}>{userName}</Text>
-        <TouchableOpacity onPress={animateInsightPoints} style={styles.insightPointsContainer}>
-          <Animated.View style={[styles.insightPointsContent, { transform: [{ scale: bounceAnim }] }]}>
-            <Ionicons name="flash" size={24} color={colors.accent} />
-            <Text style={styles.insightPointsText}>{insightPoints} IP</Text>
-          </Animated.View>
+        <TouchableOpacity onPress={onChatPress} style={styles.aiChatButton}>
+          <Ionicons name="logo-android" size={24} color={colors.accent} />
+          <Text style={styles.aiChatButtonText}>AI Chat</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 };
 
-const InsightCard = ({ title, points, icon, progress, color, onPress }) => (
+const ResourceCard = ({ title, description, icon, color, onPress }) => (
   <TouchableOpacity
-    style={[styles.insightCard, { borderColor: color }]}
+    style={[styles.resourceCard, { borderColor: color }]}
     onPress={onPress}
   >
-    <View style={[styles.insightIcon, { backgroundColor: color }]}>
+    <View style={[styles.resourceIcon, { backgroundColor: color }]}>
       <Ionicons name={icon} size={32} color={colors.primary} />
     </View>
-    <View style={styles.insightInfo}>
-      <Text style={styles.insightTitle}>{title}</Text>
-      <Text style={styles.insightPoints}>{points} IP</Text>
-    </View>
-    <View style={styles.insightProgressBar}>
-      <View style={[styles.insightProgress, { width: `${progress}%`, backgroundColor: color }]} />
+    <View style={styles.resourceInfo}>
+      <Text style={styles.resourceTitle}>{title}</Text>
+      <Text style={styles.resourceDescription}>{description}</Text>
     </View>
   </TouchableOpacity>
 );
@@ -87,7 +74,8 @@ const NewsItem = ({ title, source, onPress }) => (
 
 const Insight = () => {
   const [userName, setUserName] = useState("");
-  const [insightPoints, setInsightPoints] = useState(0);
+  const [showAllResources, setShowAllResources] = useState(false);
+  const [showAIChat, setShowAIChat] = useState(false);
   const [question, setQuestion] = useState("");
   const [aiResponse, setAiResponse] = useState("");
 
@@ -96,7 +84,6 @@ const Insight = () => {
       const user = await getCurrentUser();
       if (user && user.username) {
         setUserName(user.username);
-        setInsightPoints(150);
       } else {
         throw new Error("Username not found in user data");
       }
@@ -111,12 +98,20 @@ const Insight = () => {
     }, [fetchUserData])
   );
 
-  const insightActivities = [
-    { id: '1', title: 'Daily Quiz', points: 20, icon: 'help-circle-outline', progress: 0, color: colors.secondary },
-    { id: '2', title: 'Read Article', points: 15, icon: 'book-outline', progress: 50, color: colors.tertiary },
-    { id: '3', title: 'Watch Lecture', points: 30, icon: 'videocam-outline', progress: 75, color: colors.quaternary },
-    { id: '4', title: 'Practice Problems', points: 25, icon: 'create-outline', progress: 25, color: colors.accent },
+  const allResources = [
+    { id: '1', title: 'Apps', description: 'Digital tools for coursework and collaboration.', icon: 'apps-outline', color: colors.secondary },
+    { id: '2', title: 'General', description: 'Resources for printing, records, and jobs.', icon: 'people-outline', color: colors.tertiary },
+    { id: '3', title: 'Courses', description: 'Manage registration, schedules, and grades.', icon: 'library-outline', color: colors.quaternary },
+    { id: '4', title: 'Husky Card', description: 'Manage campus card for dining and purchases.', icon: 'card-outline', color: colors.accent },
+    { id: '5', title: 'Financial', description: 'Handle billing, aid, and scholarships.', icon: 'cash-outline', color: colors.tertiary },
+    { id: '6', title: 'Housing', description: 'Manage housing and maintenance requests.', icon: 'home-outline', color: colors.quaternary },
+    { id: '7', title: 'Miscellaneous', description: 'Room reservations, parking, and VPN access.', icon: 'ellipsis-horizontal-outline', color: colors.secondary },
+    { id: '8', title: 'Social', description: 'Find and join clubs and organizations.', icon: 'people-circle-outline', color: colors.accent },
   ];
+
+  const initialResources = allResources.filter(resource =>
+    ['General', 'Courses', 'Husky Card'].includes(resource.title)
+  );
 
   const newsItems = [
     { id: '1', title: "New Research Grant Awarded to CS Department", source: "University News" },
@@ -124,14 +119,60 @@ const Insight = () => {
     { id: '3', title: "Student Startup Wins National Competition", source: "Business School" },
   ];
 
-  const handleActivityPress = (activity) => {
+  const handleResourcePress = (resource) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    console.log(`Starting activity: ${activity.title}`);
+
+    // Navigate to the appropriate resource page
+    switch (resource.title) {
+      case 'Apps':
+        router.push('/(resources)/apps');
+        break;
+      case 'General':
+        router.push('/(resources)/general');
+        break;
+      case 'Courses':
+        router.push('/(resources)/courses');
+        break;
+      case 'Husky Card':
+        router.push('/(resources)/husky-card');
+        break;
+      case 'Financial':
+        router.push('/(resources)/financial');
+        break;
+      case 'Housing':
+        router.push('/(resources)/housing');
+        break;
+      case 'Miscellaneous':
+        router.push('/(resources)/miscellaneous');
+        break;
+      case 'Social':
+        router.push('/(resources)/social');
+        break;
+      default:
+        console.log('Unknown resource');
+    }
+  };
+
+  const handleViewAllResources = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setShowAllResources(true);
+  };
+
+  const closeAllResources = () => {
+    setShowAllResources(false);
   };
 
   const handleNewsPress = (news) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    console.log(`Opening news: ${news.title}`);
+  };
+
+  const handleChatPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setShowAIChat(true);
+  };
+
+  const closeAIChat = () => {
+    setShowAIChat(false);
   };
 
   const askQuestion = async () => {
@@ -155,55 +196,106 @@ const Insight = () => {
         colors={[colors.gradientStart, colors.gradientMiddle1, colors.gradientMiddle2, colors.gradientEnd]}
         style={styles.gradientBackground}
       >
-        <Header userName={userName} insightPoints={insightPoints} />
+        <Header userName={userName} onChatPress={handleChatPress} />
         <FlatList
           contentContainerStyle={styles.scrollViewContent}
           ListHeaderComponent={
             <>
-              <Text style={styles.sectionTitle}>Today's Insights</Text>
-              {insightActivities.map((item) => (
-                <InsightCard
+              <Text style={styles.sectionTitle}>Campus News</Text>
+              {newsItems.map((item) => (
+                <NewsItem
                   key={item.id}
                   title={item.title}
-                  points={item.points}
-                  icon={item.icon}
-                  progress={item.progress}
-                  color={item.color}
-                  onPress={() => handleActivityPress(item)}
+                  source={item.source}
+                  onPress={() => handleNewsPress(item)}
                 />
               ))}
-              <Text style={styles.sectionTitle}>AI Study Assistant</Text>
-              <View style={styles.aiChatContainer}>
-                <TextInput
-                  style={styles.aiChatInput}
-                  value={question}
-                  onChangeText={setQuestion}
-                  placeholder="Ask a study question..."
-                  placeholderTextColor={colors.textSecondary}
-                />
-                <TouchableOpacity style={styles.aiChatButton} onPress={askQuestion}>
-                  <Ionicons name="send" size={24} color={colors.text} />
-                </TouchableOpacity>
-              </View>
-              {aiResponse !== "" && (
-                <View style={styles.aiResponseContainer}>
-                  <Text style={styles.aiResponseText}>{aiResponse}</Text>
-                </View>
-              )}
-              <Text style={styles.sectionTitle}>Campus News</Text>
+              <Text style={styles.sectionTitle}>Student Resources</Text>
             </>
           }
-          data={newsItems}
+          data={initialResources}
           renderItem={({ item }) => (
-            <NewsItem
+            <ResourceCard
               title={item.title}
-              source={item.source}
-              onPress={() => handleNewsPress(item)}
+              description={item.description}
+              icon={item.icon}
+              color={item.color}
+              onPress={() => handleResourcePress(item)}
             />
           )}
           keyExtractor={(item) => item.id}
+          ListFooterComponent={
+            <TouchableOpacity style={styles.viewAllButton} onPress={handleViewAllResources}>
+              <Text style={styles.viewAllButtonText}>View All Resources</Text>
+            </TouchableOpacity>
+          }
         />
       </LinearGradient>
+
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={showAllResources}
+        onRequestClose={closeAllResources}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>All Resources</Text>
+            <FlatList
+              data={allResources}
+              renderItem={({ item }) => (
+                <ResourceCard
+                  title={item.title}
+                  description={item.description}
+                  icon={item.icon}
+                  color={item.color}
+                  onPress={() => {
+                    handleResourcePress(item);
+                    closeAllResources();
+                  }}
+                />
+              )}
+              keyExtractor={(item) => item.id}
+            />
+            <TouchableOpacity style={styles.closeButton} onPress={closeAllResources}>
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={showAIChat}
+        onRequestClose={closeAIChat}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>AI Study Assistant</Text>
+            <View style={styles.aiChatContainer}>
+              <TextInput
+                style={styles.aiChatInput}
+                value={question}
+                onChangeText={setQuestion}
+                placeholder="Ask a study question..."
+                placeholderTextColor={colors.textSecondary}
+              />
+              <TouchableOpacity style={styles.aiChatButton} onPress={askQuestion}>
+                <Ionicons name="send" size={24} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+            {aiResponse !== "" && (
+              <View style={styles.aiResponseContainer}>
+                <Text style={styles.aiResponseText}>{aiResponse}</Text>
+              </View>
+            )}
+            <TouchableOpacity style={styles.closeButton} onPress={closeAIChat}>
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -239,20 +331,8 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: colors.text,
   },
-  insightPointsContainer: {
-    backgroundColor: `${colors.accent}20`,
-    borderRadius: 16,
+  chatIconContainer: {
     padding: 8,
-  },
-  insightPointsContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  insightPointsText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: colors.text,
-    marginLeft: 8,
   },
   sectionTitle: {
     fontSize: 20,
@@ -261,7 +341,7 @@ const styles = StyleSheet.create({
     marginTop: 24,
     marginBottom: 16,
   },
-  insightCard: {
+  resourceCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.primary,
@@ -274,7 +354,7 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
-  insightIcon: {
+  resourceIcon: {
     width: 48,
     height: 48,
     borderRadius: 24,
@@ -282,59 +362,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 16,
   },
-  insightInfo: {
+  resourceInfo: {
     flex: 1,
   },
-  insightTitle: {
+  resourceTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: colors.text,
     marginBottom: 4,
   },
-  insightPoints: {
+  resourceDescription: {
     fontSize: 14,
     color: colors.textSecondary,
   },
-  insightProgressBar: {
-    width: 60,
-    height: 8,
-    backgroundColor: `${colors.text}40`,
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  insightProgress: {
-    height: '100%',
-  },
-  aiChatContainer: {
-    flexDirection: 'row',
-    backgroundColor: colors.primary,
-    borderRadius: 25,
-    paddingHorizontal: 16,
-    marginBottom: 16,
-    borderColor: colors.secondary,
-  },
-  aiChatInput: {
-    flex: 1,
-    color: colors.text,
-    fontSize: 16,
-    paddingVertical: 12,
-  },
-  aiChatButton: {
+  viewAllButton: {
     backgroundColor: colors.secondary,
     borderRadius: 25,
     padding: 12,
-    alignSelf: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
   },
-  aiResponseContainer: {
-    backgroundColor: colors.primary,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    borderColor: colors.tertiary,
-  },
-  aiResponseText: {
+  viewAllButtonText: {
     color: colors.text,
     fontSize: 16,
+    fontWeight: 'bold',
   },
   newsItem: {
     backgroundColor: colors.primary,
@@ -352,6 +403,96 @@ const styles = StyleSheet.create({
   newsSource: {
     fontSize: 14,
     color: colors.textSecondary,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: colors.primary,
+    borderRadius: 20,
+    padding: 20,
+    width: '90%',
+    maxHeight: '80%',
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: colors.text,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  closeButton: {
+    backgroundColor: colors.secondary,
+    borderRadius: 25,
+    padding: 12,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  closeButtonText: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  aiChatContainer: {
+    flexDirection: 'row',
+    backgroundColor: colors.primary,
+    borderRadius: 25,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    borderColor: colors.secondary,
+    borderWidth: 1,
+  },
+  aiChatButton: {
+    backgroundColor: colors.secondary,
+    borderRadius: 25,
+    padding: 12,
+    alignSelf: 'center',
+  },
+  aiResponseContainer: {
+    backgroundColor: colors.primary,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderColor: colors.tertiary,
+    borderWidth: 1,
+  },
+  aiResponseText: {
+    color: colors.text,
+    fontSize: 16,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flex: 1,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: colors.text,
+  },
+  aiChatButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: `${colors.accent}20`,
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  aiChatButtonText: {
+    color: colors.accent,
+    marginLeft: 8,
+    fontWeight: 'bold',
   },
 });
 
