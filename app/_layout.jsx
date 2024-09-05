@@ -4,10 +4,40 @@ import "react-native-url-polyfill/auto";
 import { SplashScreen, Stack } from "expo-router";
 
 import GlobalProvider from "../context/GlobalProvider";
-import { FriendsProvider } from "../context/FriendsContext"; // Import FriendsProvider
+import { FriendsProvider } from "../context/FriendsContext";
+import { useGlobalContext } from "../context/GlobalProvider";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
+
+const AppLayout = () => {
+  const { isLogged, user, loading } = useGlobalContext();
+
+  if (loading) {
+    return null; // Or a loading spinner
+  }
+
+  let initialRoute = '(auth)';
+  if (isLogged) {
+    initialRoute = user?.needsOnboarding ? 'OnboardingScreen' : '(tabs)';
+  }
+
+  return (
+    <Stack initialRouteName={initialRoute}>
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+      <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack.Screen name="search/[query]" options={{ headerShown: false }} />
+      <Stack.Screen name="(main)/courses" options={{ headerShown: false }} />
+      <Stack.Screen name="(main)/plan_ahead" options={{ headerShown: false }} />
+      <Stack.Screen name="(main)/timeline" options={{ headerShown: false }} />
+      <Stack.Screen name="(main)/gpa" options={{ headerShown: false }} />
+      <Stack.Screen name="(main)/friends" options={{ headerShown: false }} />
+      <Stack.Screen name="(main)/leaderboard" options={{ headerShown: false }} />
+      <Stack.Screen name="OnboardingScreen" options={{ headerShown: false }} />
+    </Stack>
+  );
+};
 
 const RootLayout = () => {
   const [fontsLoaded, error] = useFonts({
@@ -24,15 +54,10 @@ const RootLayout = () => {
 
   useEffect(() => {
     if (error) throw error;
-
     if (fontsLoaded) {
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded, error]);
-
-  if (!fontsLoaded) {
-    return null;
-  }
 
   if (!fontsLoaded && !error) {
     return null;
@@ -41,20 +66,7 @@ const RootLayout = () => {
   return (
     <GlobalProvider>
       <FriendsProvider>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-          <Stack.Screen name="index" options={{ headerShown: false }} />
-          <Stack.Screen name="search/[query]" options={{ headerShown: false }} />
-          <Stack.Screen name="(main)/courses" options={{ headerShown: false }} />
-          <Stack.Screen name="(main)/assignments" options={{ headerShown: false }} />
-          <Stack.Screen name="(main)/plan_ahead" options={{ headerShown: false }} />
-          <Stack.Screen name="(main)/calendar" options={{ headerShown: false }} />
-          <Stack.Screen name="(main)/timeline" options={{ headerShown: false }} />
-          <Stack.Screen name="(main)/gpa" options={{ headerShown: false }} />
-          <Stack.Screen name="(main)/friends" options={{ headerShown: false }} />
-          <Stack.Screen name="(main)/leaderboard" options={{ headerShown: false }} />
-        </Stack>
+        <AppLayout />
       </FriendsProvider>
     </GlobalProvider>
   );

@@ -6,23 +6,35 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { Loader } from "../../components";
 import { useGlobalContext } from "../../context/GlobalProvider";
 
-const duoColors = {
-  primary: '#4A90E2',
-  secondary: '#FFC800',
-  background: '#121212',
-  surface: '#000000',
+const colors = {
+  background: '#000000',
+  card: '#1A1A1A',
+  accent: '#FF385C',
   text: '#FFFFFF',
-  textSecondary: '#AAAAAA',
-  error: '#FF4B4B',
+  subtext: '#A0A0A0',
+  border: '#333333',
+  gradient: ['#FF385C', '#FF1493'],
 };
 
 const TabIcon = ({ icon, color, focused }) => {
   return (
     <View style={[styles.tabIconContainer, focused ? styles.tabIconContainerFocused : null]}>
-      <Ionicons name={icon} size={32} color={color} />
+      {focused ? (
+        <LinearGradient
+          colors={colors.gradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.gradientBackground}
+        >
+          <Ionicons name={icon} size={24} color={colors.text} />
+        </LinearGradient>
+      ) : (
+        <Ionicons name={icon} size={24} color={color} />
+      )}
     </View>
   );
 };
@@ -31,7 +43,7 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
   const insets = useSafeAreaInsets();
 
   const handlePress = (route, isFocused) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
     const event = navigation.emit({
       type: 'tabPress',
@@ -45,12 +57,7 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
   };
 
   return (
-    <View
-      style={[
-        styles.tabBar,
-        { paddingBottom: insets.bottom + 5 }
-      ]}
-    >
+    <BlurView intensity={100} tint="dark" style={[styles.tabBar, { paddingBottom: insets.bottom }]}>
       {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
         const isFocused = state.index === index;
@@ -67,18 +74,19 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
           >
             {options.tabBarIcon({
               focused: isFocused,
-              color: isFocused ? duoColors.primary : duoColors.textSecondary,
+              color: isFocused ? colors.accent : colors.subtext,
               size: 24
             })}
           </TouchableOpacity>
         );
       })}
-    </View>
+    </BlurView>
   );
 };
 
 const TabLayout = () => {
   const { loading, isLogged } = useGlobalContext();
+  const insets = useSafeAreaInsets();
 
   if (!loading && !isLogged) return <Redirect href="/sign-in" />;
 
@@ -103,11 +111,35 @@ const TabLayout = () => {
           }}
         />
         <Tabs.Screen
+          name="assignments"
+          options={{
+            tabBarIcon: ({ color, focused }) => (
+              <TabIcon
+                icon="document-text-outline"
+                color={color}
+                focused={focused}
+              />
+            ),
+          }}
+        />
+        <Tabs.Screen
           name="home"
           options={{
             tabBarIcon: ({ color, focused }) => (
               <TabIcon
                 icon="home-outline"
+                color={color}
+                focused={focused}
+              />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="calendar"
+          options={{
+            tabBarIcon: ({ color, focused }) => (
+              <TabIcon
+                icon="calendar-outline"
                 color={color}
                 focused={focused}
               />
@@ -128,7 +160,7 @@ const TabLayout = () => {
         />
       </Tabs>
       <Loader isLoading={loading} />
-      <StatusBar backgroundColor={duoColors.background} style="light" />
+      <StatusBar backgroundColor={colors.background} style="light" />
     </View>
   );
 };
@@ -136,28 +168,39 @@ const TabLayout = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: colors.background,
   },
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: duoColors.surface,
-    paddingTop: 3,
+    backgroundColor: `${colors.card}80`,
+    paddingTop: 10,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
   tabButton: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 6,
+    paddingVertical: 10,
   },
   tabIconContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 128,
-    height: 48,
-    borderRadius: 8,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
   },
   tabIconContainerFocused: {
-    backgroundColor: `${duoColors.primary}20`,
+    backgroundColor: `${colors.accent}20`,
+  },
+  gradientBackground: {
+    width: 80,
+    height: 50,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

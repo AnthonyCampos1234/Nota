@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, ScrollView, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, ScrollView, Dimensions, Animated, StatusBar } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,70 +7,103 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { getCurrentUser } from '../../lib/appwrite';
 import { router, useFocusEffect } from "expo-router";
-
-
+import { BlurView } from 'expo-blur';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const HEADER_MAX_HEIGHT = 200;
+const HEADER_MIN_HEIGHT = 100;
 
 const colors = {
-  primary: '#000000',
+  background: '#000000',
+  card: '#1A1A1A',
+  accent: '#FF385C',
+  text: '#FFFFFF',
+  subtext: '#A0A0A0',
+  border: '#333333',
+  gradient: ['#FF385C', '#FF1493'],
   secondary: '#4A90E2',
   tertiary: '#50C878',
   quaternary: '#9B59B6',
-  accent: '#FF69B4',
-  text: '#FFFFFF',
-  textSecondary: '#CCCCCC',
-  gradientStart: '#000000',
-  gradientMiddle1: '#0F2027',
-  gradientMiddle2: '#203A43',
-  gradientEnd: '#2C5364',
 };
 
 const gradientColors = [
-  [colors.gradientStart, colors.gradientMiddle1, colors.gradientMiddle2, colors.gradientEnd],
+  [colors.background, colors.card],
+  colors.gradient,
   [colors.secondary, colors.quaternary],
-  [colors.tertiary, colors.accent],
 ];
 
-const ClassItem = ({ item }) => (
-  <LinearGradient
-    colors={[colors.gradientMiddle1, colors.gradientMiddle2]}
-    start={{ x: 0, y: 0 }}
-    end={{ x: 1, y: 1 }}
-    style={styles.classItem}
-  >
-    <View style={[styles.colorDot, { backgroundColor: item.color }]} />
-    <View style={styles.classContent}>
-      <Text style={styles.classTitle} numberOfLines={1}>{item.title}</Text>
-      <Text style={styles.classInfo}>{item.grade} ({item.credits} cr)</Text>
-    </View>
-  </LinearGradient>
-);
+const Header = ({ scrollY, insets, onBackPress }) => {
+  const headerHeight = scrollY.interpolate({
+    inputRange: [0, HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT],
+    outputRange: [HEADER_MAX_HEIGHT, HEADER_MIN_HEIGHT],
+    extrapolate: 'clamp',
+  });
+
+  const headerOpacity = scrollY.interpolate({
+    inputRange: [0, (HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT) / 2, HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT],
+    outputRange: [1, 1, 0],
+    extrapolate: 'clamp',
+  });
+
+  const miniHeaderOpacity = scrollY.interpolate({
+    inputRange: [0, HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT],
+    outputRange: [0, 1],
+    extrapolate: 'clamp',
+  });
+
+  return (
+    <Animated.View style={[styles.header, { height: headerHeight }]}>
+      <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill} />
+      <Animated.View style={[styles.headerContent, { opacity: headerOpacity, paddingTop: insets.top }]}>
+        <View style={styles.headerTopRow}>
+          <TouchableOpacity onPress={onBackPress} style={styles.backButton}>
+            <Ionicons name="chevron-back" size={28} color={colors.text} />
+          </TouchableOpacity>
+          <View style={styles.headerTitleContainer}>
+            <Text style={styles.headerTitle}>GPA</Text>
+          </View>
+          <View style={styles.placeholderButton} />
+        </View>
+        <Text style={styles.headerSubtitle}>Track and project your academic performance</Text>
+      </Animated.View>
+      <Animated.View style={[styles.miniHeader, { opacity: miniHeaderOpacity, paddingTop: insets.top }]}>
+        <View style={styles.miniHeaderContent}>
+          <TouchableOpacity onPress={onBackPress} style={styles.miniBackButton}>
+            <Ionicons name="chevron-back" size={24} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={styles.miniHeaderTitle}>GPA</Text>
+        </View>
+      </Animated.View>
+    </Animated.View>
+  );
+};
 
 const GPAScreen = () => {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
+  const scrollY = useRef(new Animated.Value(0)).current;
   const [displayedGPA, setDisplayedGPA] = useState('0.00');
   const [actualGPA, setActualGPA] = useState(0);
   const [totalCredits, setTotalCredits] = useState(0);
   const initialLoadRef = useRef(true);
   const [hypotheticalGrades, setHypotheticalGrades] = useState([]);
   const [whatIfGPA, setWhatIfGPA] = useState('0.00');
+  const [currentGPA, setCurrentGPA] = useState(0);
+  const [cumulativeGPA, setCumulativeGPA] = useState(0);
 
   const fetchUserGPA = useCallback(async () => {
     try {
       const user = await getCurrentUser();
-      if (user && user.gpa !== undefined) {
-        setActualGPA(user.gpa);
-        setTotalCredits(user.totalCredits || 0); // Assuming the user object has a totalCredits field
+      if (user) {
+        setCurrentGPA(user.currentGPA || 0);
+        setCumulativeGPA(user.cumulativeGPA || 0);
+        setActualGPA(user.currentGPA || 0);
+        setTotalCredits(user.totalCredits || 0);
       }
     } catch (error) {
       console.error("Error fetching user GPA:", error);
     }
   }, []);
-
-  useEffect(() => {
-    fetchUserGPA();
-  }, [fetchUserGPA]);
 
   useFocusEffect(
     useCallback(() => {
@@ -140,72 +173,68 @@ const GPAScreen = () => {
     );
   }, [hypotheticalGrades]);
 
+  const handleBackPress = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    router.back();
+  }, []);
+
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right']}>
-      <LinearGradient
-        colors={gradientColors[0]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.gradientBackground}
+      <StatusBar barStyle="light-content" />
+      <Header scrollY={scrollY} insets={insets} onBackPress={handleBackPress} />
+      <Animated.ScrollView
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: HEADER_MAX_HEIGHT, paddingBottom: insets.bottom + 20 }
+        ]}
+        scrollEventThrottle={16}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
+        )}
       >
-        <View style={[styles.topSection, { paddingTop: insets.top }]}>
-          <TouchableOpacity
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              router.back();
-            }}
-            style={styles.backButton}
-          >
-            <Ionicons name="chevron-back" size={32} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>GPA</Text>
-          <View style={styles.placeholder} />
+        <View style={styles.gpaSection}>
+          <Text style={styles.gpa}>{displayedGPA}</Text>
+          <Text style={styles.gpaSubtitle}>Current GPA</Text>
         </View>
-        <ScrollView
-          contentContainerStyle={[
-            styles.scrollContent,
-            { paddingBottom: insets.bottom + 20 }
-          ]}
-        >
-          <View style={styles.gpaSection}>
-            <Text style={styles.gpa}>{displayedGPA}</Text>
-            <Text style={styles.gpaSubtitle}>Current GPA</Text>
-          </View>
+        <View style={styles.gpaInfoSection}>
+          <Text style={styles.gpaInfoText}>Current GPA: {currentGPA.toFixed(2)}</Text>
+          <Text style={styles.gpaInfoText}>Cumulative GPA: {cumulativeGPA.toFixed(2)}</Text>
+        </View>
 
-          <LinearGradient
-            colors={gradientColors[1]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.whatIfSection}
-          >
-            <Text style={styles.whatIfTitle}>What If Calculator</Text>
-            <Text style={styles.whatIfGPA}>Projected GPA: {whatIfGPA}</Text>
-            {hypotheticalGrades.map((grade, index) => (
-              <View key={grade.id} style={styles.hypotheticalGradeRow}>
-                <Text style={styles.hypotheticalGradeText}>Class {index + 1}:</Text>
-                <TextInput
-                  style={styles.gradeInput}
-                  value={grade.grade}
-                  onChangeText={(newGrade) => updateHypotheticalGrade(grade.id, 'grade', newGrade)}
-                  placeholder="Grade"
-                  placeholderTextColor={colors.textSecondary}
-                />
-                <TextInput
-                  style={styles.creditsInput}
-                  value={grade.credits.toString()}
-                  onChangeText={(newCredits) => updateHypotheticalGrade(grade.id, 'credits', newCredits)}
-                  placeholder="Credits"
-                  placeholderTextColor={colors.textSecondary}
-                  keyboardType="numeric"
-                />
-              </View>
-            ))}
-            <TouchableOpacity style={styles.addGradeButton} onPress={addHypotheticalGrade}>
-              <Text style={styles.addGradeButtonText}>Add Hypothetical Grade</Text>
-            </TouchableOpacity>
-          </LinearGradient>
-        </ScrollView>
-      </LinearGradient>
+        <LinearGradient
+          colors={gradientColors[1]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.whatIfSection}
+        >
+          <Text style={styles.whatIfTitle}>What If Calculator</Text>
+          <Text style={styles.whatIfGPA}>Projected GPA: {whatIfGPA}</Text>
+          {hypotheticalGrades.map((grade, index) => (
+            <View key={grade.id} style={styles.hypotheticalGradeRow}>
+              <Text style={styles.hypotheticalGradeText}>Class {index + 1}:</Text>
+              <TextInput
+                style={styles.gradeInput}
+                value={grade.grade}
+                onChangeText={(newGrade) => updateHypotheticalGrade(grade.id, 'grade', newGrade)}
+                placeholder="Grade"
+                placeholderTextColor={colors.subtext}
+              />
+              <TextInput
+                style={styles.creditsInput}
+                value={grade.credits.toString()}
+                onChangeText={(newCredits) => updateHypotheticalGrade(grade.id, 'credits', newCredits)}
+                placeholder="Credits"
+                placeholderTextColor={colors.subtext}
+                keyboardType="numeric"
+              />
+            </View>
+          ))}
+          <TouchableOpacity style={styles.addGradeButton} onPress={addHypotheticalGrade}>
+            <Text style={styles.addGradeButtonText}>Add Hypothetical Grade</Text>
+          </TouchableOpacity>
+        </LinearGradient>
+      </Animated.ScrollView>
     </SafeAreaView>
   );
 };
@@ -213,41 +242,84 @@ const GPAScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.background,
   },
-  gradientBackground: {
+  header: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1,
+    backgroundColor: 'transparent',
+  },
+  headerContent: {
     flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  topSection: {
-    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingBottom: 15,
+  },
+  headerTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 10,
   },
   backButton: {
-    width: 45,
-    height: 45,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.3)',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  headerTitle: {
-    color: colors.text,
-    fontSize: 28,
-    fontWeight: 'bold',
+  headerTitleContainer: {
+    flex: 1,
+    alignItems: 'center',
   },
-  placeholder: {
+  headerTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: colors.text,
+  },
+  placeholderButton: {
     width: 40,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: colors.subtext,
+    textAlign: 'center',
+  },
+  miniHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: HEADER_MIN_HEIGHT,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  miniHeaderContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  miniBackButton: {
+    marginRight: 15,
+  },
+  miniHeaderTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: colors.text,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 20,
   },
   gpaSection: {
     alignItems: 'center',
-    paddingTop: 20,
-    paddingBottom: 10,
+    paddingVertical: 20,
   },
   gpa: {
     color: colors.text,
@@ -255,59 +327,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   gpaSubtitle: {
-    color: colors.textSecondary,
+    color: colors.subtext,
     fontSize: 16,
-  },
-  controls: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-  },
-  controlButton: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    padding: 10,
-    borderRadius: 8,
-  },
-  controlText: {
-    color: colors.text,
-    fontSize: 16,
-  },
-  listContainer: {
-    paddingHorizontal: 20,
-  },
-  classItem: {
-    flexDirection: 'row',
-    borderRadius: 10,
-    marginBottom: 10,
-    overflow: 'hidden',
-  },
-  colorDot: {
-    width: 10,
-    height: '100%',
-  },
-  classContent: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 15,
-  },
-  classTitle: {
-    flex: 1,
-    color: colors.text,
-    fontSize: 16,
-  },
-  classInfo: {
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginLeft: 10,
   },
   whatIfSection: {
     padding: 20,
     borderRadius: 15,
-    margin: 20,
+    marginVertical: 20,
   },
   whatIfTitle: {
     color: colors.text,
@@ -355,9 +381,20 @@ const styles = StyleSheet.create({
     marginTop: 15,
   },
   addGradeButtonText: {
-    color: colors.primary,
+    color: colors.background,
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  gpaInfoSection: {
+    marginTop: 20,
+    padding: 15,
+    backgroundColor: colors.card,
+    borderRadius: 12,
+  },
+  gpaInfoText: {
+    color: colors.text,
+    fontSize: 16,
+    marginBottom: 5,
   },
 });
 

@@ -1,22 +1,28 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Linking, Alert } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import React, { useCallback, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Linking, Alert, Dimensions, Animated, StatusBar } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Stack, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
+import { BlurView } from 'expo-blur';
+import { Stack } from 'expo-router';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const HEADER_MAX_HEIGHT = 200;
+const HEADER_MIN_HEIGHT = 100;
 
 const colors = {
-    primary: '#000000',
+    background: '#000000',
+    card: '#1A1A1A',
+    accent: '#FF385C',
+    text: '#FFFFFF',
+    subtext: '#A0A0A0',
+    border: '#333333',
+    gradient: ['#FF385C', '#FF1493'],
     secondary: '#4A90E2',
     tertiary: '#50C878',
     quaternary: '#9B59B6',
-    accent: '#FF69B4',
-    text: '#FFFFFF',
-    textSecondary: '#CCCCCC',
-    gradientStart: '#000000',
-    gradientMiddle1: '#0F2027',
-    gradientMiddle2: '#203A43',
-    gradientEnd: '#2C5364',
 };
 
 const appsItems = [
@@ -28,141 +34,222 @@ const appsItems = [
     { title: 'Workday', description: 'Manage payroll, benefits, and personal information', icon: 'cash-outline', url: 'https://www.myworkday.com/northeastern/d/pex/home.htmld' },
 ];
 
-const Header = ({ title }) => {
-    const insets = useSafeAreaInsets();
-    const router = useRouter();
+const AppItem = ({ item, onPress }) => (
+    <TouchableOpacity onPress={() => onPress(item)} style={styles.appItem}>
+        <LinearGradient
+            colors={colors.gradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.appGradient}
+        >
+            <View style={styles.appContent}>
+                <Ionicons name={item.icon} size={24} color={colors.text} style={styles.appIcon} />
+                <View style={styles.appTextContainer}>
+                    <Text style={styles.appTitle} numberOfLines={1}>{item.title}</Text>
+                    <Text style={styles.appDescription} numberOfLines={2}>{item.description}</Text>
+                </View>
+            </View>
+        </LinearGradient>
+    </TouchableOpacity>
+);
+
+const Header = ({ scrollY, insets, onBackPress }) => {
+    const headerHeight = scrollY.interpolate({
+        inputRange: [0, HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT],
+        outputRange: [HEADER_MAX_HEIGHT, HEADER_MIN_HEIGHT],
+        extrapolate: 'clamp',
+    });
+
+    const headerOpacity = scrollY.interpolate({
+        inputRange: [0, (HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT) / 2, HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT],
+        outputRange: [1, 1, 0],
+        extrapolate: 'clamp',
+    });
+
+    const miniHeaderOpacity = scrollY.interpolate({
+        inputRange: [0, HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT],
+        outputRange: [0, 1],
+        extrapolate: 'clamp',
+    });
 
     return (
-        <View style={[styles.header, { paddingTop: insets.top }]}>
-            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                <Ionicons name="chevron-back" size={32} color={colors.text} />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>{title}</Text>
-            <View style={styles.placeholder} />
-        </View>
-    );
-};
-
-const ResourceItem = ({ title, description, icon, url }) => {
-    const handlePress = async () => {
-        const supported = await Linking.canOpenURL(url);
-
-        if (supported) {
-            await Linking.openURL(url);
-        } else {
-            Alert.alert(`Don't know how to open this URL: ${url}`);
-        }
-    };
-
-    return (
-        <TouchableOpacity style={styles.resourceCard} onPress={handlePress}>
-            <View style={[styles.resourceIcon, { backgroundColor: colors.secondary }]}>
-                <Ionicons name={icon} size={24} color={colors.primary} />
-            </View>
-            <View style={styles.resourceInfo}>
-                <Text style={styles.resourceTitle}>{title}</Text>
-                <Text style={styles.resourceDescription}>{description}</Text>
-            </View>
-        </TouchableOpacity>
+        <Animated.View style={[styles.header, { height: headerHeight }]}>
+            <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill} />
+            <Animated.View style={[styles.headerContent, { opacity: headerOpacity, paddingTop: insets.top }]}>
+                <View style={styles.headerTopRow}>
+                    <TouchableOpacity onPress={onBackPress} style={styles.backButton}>
+                        <Ionicons name="chevron-back" size={28} color={colors.text} />
+                    </TouchableOpacity>
+                    <View style={styles.headerTitleContainer}>
+                        <Text style={styles.headerTitle}>Apps</Text>
+                    </View>
+                    <View style={styles.placeholderButton} />
+                </View>
+                <Text style={styles.headerSubtitle}>Access your university resources</Text>
+            </Animated.View>
+            <Animated.View style={[styles.miniHeader, { opacity: miniHeaderOpacity, paddingTop: insets.top }]}>
+                <View style={styles.miniHeaderContent}>
+                    <TouchableOpacity onPress={onBackPress} style={styles.miniBackButton}>
+                        <Ionicons name="chevron-back" size={24} color={colors.text} />
+                    </TouchableOpacity>
+                    <Text style={styles.miniHeaderTitle}>Apps</Text>
+                </View>
+            </Animated.View>
+        </Animated.View>
     );
 };
 
 const Apps = () => {
+    const navigation = useNavigation();
+    const insets = useSafeAreaInsets();
+    const scrollY = useRef(new Animated.Value(0)).current;
+
+    const handleBackPress = useCallback(() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        navigation.goBack();
+    }, [navigation]);
+
+    const handleAppPress = useCallback(async (app) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        const supported = await Linking.canOpenURL(app.url);
+
+        if (supported) {
+            await Linking.openURL(app.url);
+        } else {
+            Alert.alert(`Unable to open`, `Don't know how to open this URL: ${app.url}`);
+        }
+    }, []);
+
     return (
-        <>
+        <View style={styles.container}>
             <Stack.Screen options={{ headerShown: false }} />
-            <SafeAreaView style={styles.container} edges={['left', 'right']}>
-                <LinearGradient
-                    colors={[colors.gradientStart, colors.gradientMiddle1, colors.gradientMiddle2, colors.gradientEnd]}
-                    style={styles.gradientBackground}
-                >
-                    <Header title="Apps" />
-                    <ScrollView style={styles.scrollViewContent}>
-                        {appsItems.map((item, index) => (
-                            <ResourceItem
-                                key={index}
-                                title={item.title}
-                                description={item.description}
-                                icon={item.icon}
-                                url={item.url}
-                            />
-                        ))}
-                    </ScrollView>
-                </LinearGradient>
-            </SafeAreaView>
-        </>
+            <StatusBar barStyle="light-content" />
+            <Header scrollY={scrollY} insets={insets} onBackPress={handleBackPress} />
+            <Animated.FlatList
+                data={appsItems}
+                renderItem={({ item }) => <AppItem item={item} onPress={handleAppPress} />}
+                keyExtractor={item => item.title}
+                contentContainerStyle={[
+                    styles.listContainer,
+                    { paddingTop: HEADER_MAX_HEIGHT, paddingBottom: 20 + insets.bottom }
+                ]}
+                scrollEventThrottle={16}
+                onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                    { useNativeDriver: false }
+                )}
+            />
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.primary,
-    },
-    gradientBackground: {
-        flex: 1,
-    },
-    scrollViewContent: {
-        flexGrow: 1,
-        paddingHorizontal: 16,
-        paddingBottom: 32,
+        backgroundColor: colors.background,
     },
     header: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 1,
+        backgroundColor: 'transparent',
+    },
+    headerContent: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+    },
+    headerTopRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingBottom: 20,
-    },
-    headerTitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: colors.text,
+        width: '100%',
+        marginBottom: 10,
     },
     backButton: {
-        width: 45,
-        height: 45,
-        borderRadius: 16,
-        backgroundColor: 'rgba(255,255,255,0.3)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    placeholder: {
         width: 40,
-    },
-    resourceCard: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: colors.primary,
-        borderRadius: 16,
-        padding: 16,
-        marginBottom: 16,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3.84,
-        elevation: 5,
-    },
-    resourceIcon: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(255,255,255,0.2)',
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 16,
     },
-    resourceInfo: {
+    headerTitleContainer: {
         flex: 1,
+        alignItems: 'center',
     },
-    resourceTitle: {
-        fontSize: 18,
+    headerTitle: {
+        fontSize: 32,
         fontWeight: 'bold',
         color: colors.text,
-        marginBottom: 4,
     },
-    resourceDescription: {
+    placeholderButton: {
+        width: 40,
+    },
+    headerSubtitle: {
+        fontSize: 16,
+        color: colors.subtext,
+        textAlign: 'center',
+    },
+    miniHeader: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: HEADER_MIN_HEIGHT,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+    },
+    miniHeaderContent: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    miniBackButton: {
+        marginRight: 15,
+    },
+    miniHeaderTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: colors.text,
+    },
+    listContainer: {
+        paddingHorizontal: 20,
+    },
+    appItem: {
+        marginBottom: 15,
+        borderRadius: 12,
+        overflow: 'hidden',
+    },
+    appGradient: {
+        padding: 2,
+    },
+    appContent: {
+        backgroundColor: colors.card,
+        borderRadius: 10,
+        padding: 15,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    appIcon: {
+        marginRight: 15,
+    },
+    appTextContainer: {
+        flex: 1,
+    },
+    appTitle: {
+        color: colors.text,
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 5,
+    },
+    appDescription: {
+        color: colors.subtext,
         fontSize: 14,
-        color: colors.textSecondary,
     },
 });
 

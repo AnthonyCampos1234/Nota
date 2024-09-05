@@ -1,13 +1,15 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { StyleSheet, View, TouchableOpacity, Text, FlatList, Modal, TextInput, Alert, RefreshControl, ActivityIndicator, Dimensions } from 'react-native';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { StyleSheet, View, TouchableOpacity, Text, FlatList, Modal, TextInput, Alert, RefreshControl, ActivityIndicator, Dimensions, Animated, StatusBar } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import { BlurView } from 'expo-blur';
+import { router, useFocusEffect } from "expo-router";
 
 import {
   getCurrentUser,
+  getFriendRequests,
   sendFriendRequest,
   acceptFriendRequest,
   denyFriendRequest,
@@ -20,83 +22,82 @@ import { useGlobalContext } from "../../context/GlobalProvider";
 import { useFriends } from '../../context/FriendsContext';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const HEADER_MAX_HEIGHT = 200;
+const HEADER_MIN_HEIGHT = 100;
 
 const colors = {
-  primary: '#000000',
+  background: '#000000',
+  card: '#1A1A1A',
+  accent: '#FF385C',
+  text: '#FFFFFF',
+  subtext: '#A0A0A0',
+  border: '#333333',
+  gradient: ['#FF385C', '#FF1493'],
   secondary: '#4A90E2',
   tertiary: '#50C878',
   quaternary: '#9B59B6',
-  accent: '#FF69B4',
-  text: '#FFFFFF',
-  textSecondary: '#CCCCCC',
-  gradientStart: '#000000',
-  gradientMiddle1: '#0F2027',
-  gradientMiddle2: '#203A43',
-  gradientEnd: '#2C5364',
 };
 
 const gradientColors = [
-  [colors.gradientStart, colors.gradientMiddle1, colors.gradientMiddle2, colors.gradientEnd],
+  [colors.background, colors.card],
+  colors.gradient,
   [colors.secondary, colors.quaternary],
-  [colors.tertiary, colors.accent],
 ];
 
-const FriendItem = ({ friend, onRemove, onViewProfile, isRemoving }) => (
-  <LinearGradient
-    colors={gradientColors[2]}
-    start={{ x: 0, y: 0 }}
-    end={{ x: 1, y: 1 }}
-    style={styles.friendItem}
-  >
-    <TouchableOpacity onPress={() => onViewProfile(friend)} style={styles.friendInfo}>
-      <Ionicons name="person-circle-outline" size={32} color={colors.text} />
-      <Text style={styles.friendName}>{friend.name}</Text>
-    </TouchableOpacity>
-    <TouchableOpacity onPress={() => onRemove(friend.friendId)} style={styles.removeButton} disabled={isRemoving}>
-      {isRemoving ? (
-        <ActivityIndicator size="small" color={colors.text} />
-      ) : (
-        <View style={styles.removeButtonInner}>
-          <Ionicons name="close-circle-outline" size={32} color={colors.text} />
-          <Text style={styles.removeButtonText}>Remove</Text>
-        </View>
-      )}
-    </TouchableOpacity>
-  </LinearGradient>
-);
+const Header = ({ scrollY, insets, onBackPress, onAddPress }) => {
+  const headerHeight = scrollY.interpolate({
+    inputRange: [0, HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT],
+    outputRange: [HEADER_MAX_HEIGHT, HEADER_MIN_HEIGHT],
+    extrapolate: 'clamp',
+  });
 
-const FriendRequestItem = ({ request, onAccept, onDeny, isProcessing }) => (
-  <LinearGradient
-    colors={gradientColors[1]}
-    start={{ x: 0, y: 0 }}
-    end={{ x: 1, y: 1 }}
-    style={styles.friendRequestItem}
-  >
-    <Text style={styles.friendRequestName}>
-      {request.senderName || `User ${request.senderId.slice(0, 8)}`}
-    </Text>
-    <View style={styles.friendRequestButtons}>
-      {isProcessing ? (
-        <ActivityIndicator size="small" color={colors.text} />
-      ) : (
-        <>
-          <TouchableOpacity onPress={() => onAccept(request.$id)} style={styles.actionButton}>
-            <Ionicons name="checkmark-circle-outline" size={32} color={colors.tertiary} />
-            <Text style={styles.actionButtonText}>Accept</Text>
+  const headerOpacity = scrollY.interpolate({
+    inputRange: [0, (HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT) / 2, HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT],
+    outputRange: [1, 1, 0],
+    extrapolate: 'clamp',
+  });
+
+  const miniHeaderOpacity = scrollY.interpolate({
+    inputRange: [0, HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT],
+    outputRange: [0, 1],
+    extrapolate: 'clamp',
+  });
+
+  return (
+    <Animated.View style={[styles.header, { height: headerHeight }]}>
+      <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill} />
+      <Animated.View style={[styles.headerContent, { opacity: headerOpacity, paddingTop: insets.top }]}>
+        <View style={styles.headerTopRow}>
+          <TouchableOpacity onPress={onBackPress} style={styles.backButton}>
+            <Ionicons name="chevron-back" size={28} color={colors.text} />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => onDeny(request.$id)} style={styles.actionButton}>
-            <Ionicons name="close-circle-outline" size={32} color={colors.accent} />
-            <Text style={styles.actionButtonText}>Deny</Text>
+          <View style={styles.headerTitleContainer}>
+            <Text style={styles.headerTitle}>Friends</Text>
+          </View>
+          <TouchableOpacity onPress={onAddPress} style={styles.addButton}>
+            <Ionicons name="add-circle-outline" size={32} color={colors.text} />
           </TouchableOpacity>
-        </>
-      )}
-    </View>
-  </LinearGradient>
-);
+        </View>
+        <Text style={styles.headerSubtitle}>Connect with your peers</Text>
+      </Animated.View>
+      <Animated.View style={[styles.miniHeader, { opacity: miniHeaderOpacity, paddingTop: insets.top }]}>
+        <View style={styles.miniHeaderContent}>
+          <TouchableOpacity onPress={onBackPress} style={styles.miniBackButton}>
+            <Ionicons name="chevron-back" size={24} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={styles.miniHeaderTitle}>Friends</Text>
+          <TouchableOpacity onPress={onAddPress} style={styles.miniAddButton}>
+            <Ionicons name="add-circle-outline" size={24} color={colors.text} />
+          </TouchableOpacity>
+        </View>
+      </Animated.View>
+    </Animated.View>
+  );
+};
 
 const FriendsScreen = () => {
-  const navigation = useNavigation();
   const insets = useSafeAreaInsets();
+  const scrollY = useRef(new Animated.Value(0)).current;
   const { user } = useGlobalContext();
   const { friends, friendRequests, loading, fetchFriends, removeFriend, setFriendRequests } = useFriends();
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
@@ -104,7 +105,6 @@ const FriendsScreen = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [isProfileModalVisible, setIsProfileModalVisible] = useState(false);
   const [selectedFriend, setSelectedFriend] = useState(null);
-  const [isSubmitting, setSubmitting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [processingRequests, setProcessingRequests] = useState({});
@@ -136,9 +136,20 @@ const FriendsScreen = () => {
     useCallback(() => {
       if (user) {
         fetchFriends(user.$id);
+        fetchFriendRequests(user.$id);
       }
     }, [fetchFriends, user])
   );
+
+  const fetchFriendRequests = async (userId) => {
+    try {
+      const requests = await getFriendRequests(userId);
+      console.log("Friend requests fetched:", requests);
+      setFriendRequests(requests);
+    } catch (error) {
+      console.error("Error fetching friend requests:", error);
+    }
+  };
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -172,6 +183,16 @@ const FriendsScreen = () => {
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm, handleSearch]);
+
+  const handleBackPress = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    router.back();
+  }, []);
+
+  const handleAddPress = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setIsAddModalVisible(true);
+  }, []);
 
   const handleSendFriendRequest = async (selectedUser) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -245,17 +266,27 @@ const FriendsScreen = () => {
   };
 
   const renderGPA = (friend) => {
-    if (!friend.gpa || !friend.gpaVisibility) {
+    if (!friend.currentGPA || !friend.cumulativeGPA || !friend.gpaVisibility) {
       return <Text style={styles.gpa}>GPA: Not available</Text>;
     }
 
     switch (friend.gpaVisibility) {
-      case 'public':
-        return <Text style={styles.gpa}>GPA: {friend.gpa.toFixed(2)}</Text>;
-      case 'friends':
+      case 'Public':
+        return (
+          <Text style={styles.gpa}>
+            Current GPA: {friend.currentGPA.toFixed(2)},
+            Cumulative GPA: {friend.cumulativeGPA.toFixed(2)}
+          </Text>
+        );
+      case 'Friends':
         // Assuming the user viewing this is already a friend
-        return <Text style={styles.gpa}>GPA: {friend.gpa.toFixed(2)}</Text>;
-      case 'private':
+        return (
+          <Text style={styles.gpa}>
+            Current GPA: {friend.currentGPA.toFixed(2)},
+            Cumulative GPA: {friend.cumulativeGPA.toFixed(2)}
+          </Text>
+        );
+      case 'Private':
       default:
         return <Text style={styles.gpa}>GPA: Private</Text>;
     }
@@ -267,93 +298,81 @@ const FriendsScreen = () => {
     setIsProfileModalVisible(true);
   };
 
+  const renderFriendItem = ({ item }) => (
+    <FriendItem
+      friend={item}
+      onRemove={handleRemoveFriend}
+      onViewProfile={viewProfile}
+      isRemoving={removingFriends[item.friendId]}
+    />
+  );
+
+  const renderFriendRequestItem = ({ item }) => (
+    <FriendRequestItem
+      request={item}
+      onAccept={handleAcceptFriendRequest}
+      onDeny={handleDenyFriendRequest}
+      isProcessing={processingRequests[item.$id]}
+    />
+  );
+
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right']}>
-      <LinearGradient
-        colors={gradientColors[0]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.gradientBackground}
-      >
-        <View style={[styles.topSection, { paddingTop: insets.top }]}>
-          <TouchableOpacity
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              navigation.goBack();
-            }}
-            style={styles.backButton}
-          >
-            <Ionicons name="chevron-back" size={32} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Friends</Text>
-          <TouchableOpacity
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.medium);
-              setIsAddModalVisible(true);
-            }}
-            style={styles.addButton}
-          >
-            <Ionicons name="add-circle-outline" size={40} color={colors.text} />
-          </TouchableOpacity>
-        </View>
-
-        {friendRequests.length > 0 && (
-          <View style={styles.friendRequestsSection}>
-            <Text style={styles.sectionTitle}>Friend Requests</Text>
-            <FlatList
-              data={friendRequests}
-              renderItem={({ item }) => (
-                <FriendRequestItem
-                  key={item.$id}
-                  request={item}
-                  onAccept={handleAcceptFriendRequest}
-                  onDeny={handleDenyFriendRequest}
-                  isProcessing={processingRequests[item.$id]}
-                />
-              )}
-              keyExtractor={item => item.$id}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-            />
-          </View>
+      <StatusBar barStyle="light-content" />
+      <Header
+        scrollY={scrollY}
+        insets={insets}
+        onBackPress={handleBackPress}
+        onAddPress={handleAddPress}
+      />
+      <Animated.FlatList
+        data={friends}
+        renderItem={renderFriendItem}
+        keyExtractor={item => item.$id}
+        contentContainerStyle={[
+          styles.listContainer,
+          { paddingTop: HEADER_MAX_HEIGHT, paddingBottom: insets.bottom + 20 }
+        ]}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        scrollEventThrottle={16}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
         )}
+        ListHeaderComponent={() => (
+          <>
+            {friendRequests.length > 0 && (
+              <View style={styles.friendRequestsSection}>
+                <Text style={styles.sectionTitle}>Friend Requests</Text>
+                <FlatList
+                  data={friendRequests}
+                  renderItem={renderFriendRequestItem}
+                  keyExtractor={item => item.$id}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                />
+              </View>
+            )}
+            <Text style={styles.sectionTitle}>My Friends</Text>
+          </>
+        )}
+      />
 
-        <Text style={styles.sectionTitle}>My Friends</Text>
-        <FlatList
-          data={friends}
-          renderItem={({ item }) => (
-            <FriendItem
-              key={item.$id}
-              friend={item}
-              onRemove={handleRemoveFriend}
-              onViewProfile={viewProfile}
-              isRemoving={removingFriends[item.friendId]}
-            />
-          )}
-          keyExtractor={item => item.$id}
-          contentContainerStyle={styles.listContainer}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-        />
-
-        <Modal
-          visible={isAddModalVisible}
-          transparent={true}
-          animationType="slide"
-        >
-          <View style={styles.modalContainer}>
-            <LinearGradient
-              colors={gradientColors[1]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.modalContent}
-            >
+      <Modal
+        visible={isAddModalVisible}
+        transparent={true}
+        animationType="slide"
+      >
+        <View style={styles.modalContainer}>
+          <BlurView intensity={100} tint="dark" style={styles.modalBlur}>
+            <View style={styles.modalContent}>
               <Text style={styles.modalTitle}>Find Friends</Text>
               <TextInput
                 style={styles.input}
                 placeholder="Search by username or email"
-                placeholderTextColor={colors.textSecondary}
+                placeholderTextColor={colors.subtext}
                 value={searchTerm}
                 onChangeText={setSearchTerm}
                 autoCapitalize="none"
@@ -388,44 +407,41 @@ const FriendsScreen = () => {
               )}
               <TouchableOpacity
                 onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.medium);
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                   setIsAddModalVisible(false);
                 }}
                 style={styles.modalButton}
               >
                 <Text style={styles.modalButtonText}>Cancel</Text>
               </TouchableOpacity>
-            </LinearGradient>
-          </View>
-        </Modal>
+            </View>
+          </BlurView>
+        </View>
+      </Modal>
 
-        <Modal
-          visible={isProfileModalVisible}
-          transparent={true}
-          animationType="slide"
-        >
-          <View style={styles.modalContainer}>
-            <LinearGradient
-              colors={gradientColors[2]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.modalContent}
-            >
+      <Modal
+        visible={isProfileModalVisible}
+        transparent={true}
+        animationType="slide"
+      >
+        <View style={styles.modalContainer}>
+          <BlurView intensity={100} tint="dark" style={styles.modalBlur}>
+            <View style={styles.modalContent}>
               <Text style={styles.modalTitle}>{selectedFriend?.name}</Text>
               {selectedFriend && renderGPA(selectedFriend)}
               <TouchableOpacity
                 onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.medium);
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                   setIsProfileModalVisible(false);
                 }}
                 style={styles.modalButton}
               >
                 <Text style={styles.modalButtonText}>Close</Text>
               </TouchableOpacity>
-            </LinearGradient>
-          </View>
-        </Modal>
-      </LinearGradient>
+            </View>
+          </BlurView>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -433,113 +449,122 @@ const FriendsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.background,
   },
-  gradientBackground: {
+  header: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1,
+    backgroundColor: 'transparent',
+  },
+  headerContent: {
     flex: 1,
-  },
-  topSection: {
-    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingBottom: 15,
+  },
+  headerTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 10,
   },
   backButton: {
-    width: 45,
-    height: 45,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.3)',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
+  headerTitleContainer: {
+    flex: 1,
+    alignItems: 'center',
+  },
   headerTitle: {
-    color: colors.text,
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
+    color: colors.text,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: colors.subtext,
+    textAlign: 'center',
   },
   addButton: {
     width: 40,
     height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  miniHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: HEADER_MIN_HEIGHT,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  miniHeaderContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  miniBackButton: {
+    marginRight: 15,
+  },
+  miniHeaderTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: colors.text,
+  },
+  miniAddButton: {
+    marginLeft: 15,
+  },
+  listContainer: {
+    paddingHorizontal: 20,
   },
   sectionTitle: {
     color: colors.text,
     fontSize: 20,
     fontWeight: 'bold',
-    marginLeft: 20,
     marginTop: 20,
     marginBottom: 10,
   },
   friendRequestsSection: {
     marginBottom: 20,
   },
-  listContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
-  friendItem: {
-    flexDirection: 'row',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 10,
-    alignItems: 'center',
-  },
-  friendRequestItem: {
-    flexDirection: 'column',
-    borderRadius: 10,
-    padding: 15,
-    marginRight: 10,
-    width: 250,
-  },
-  friendInfo: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  friendName: {
-    color: colors.text,
-    fontSize: 18,
-    marginLeft: 10,
-  },
-  friendRequestName: {
-    color: colors.text,
-    fontSize: 18,
-    marginBottom: 10,
-  },
-  friendRequestButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  removeButton: {
-    marginLeft: 10,
-  },
-  removeButtonInner: {
-    flexDirection: 'column',
-    alignItems: 'center',
-  },
-  removeButtonText: {
-    color: colors.text,
-    marginTop: 5,
-  },
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalBlur: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalContent: {
-    borderRadius: 15,
+    backgroundColor: colors.card,
+    borderRadius: 20,
     padding: 20,
     width: '80%',
-    alignItems: 'center',
+    maxWidth: 400,
   },
   modalTitle: {
     color: colors.text,
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 15,
+    textAlign: 'center',
   },
   input: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
@@ -551,7 +576,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   modalButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: colors.accent,
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',
@@ -562,12 +587,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontWeight: 'bold',
     fontSize: 16,
-  },
-  gpa: {
-    color: colors.text,
-    fontSize: 18,
-    marginTop: 10,
-    marginBottom: 15,
   },
   searchResultsList: {
     maxHeight: SCREEN_HEIGHT * 0.3,
@@ -588,10 +607,45 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   noResultsText: {
-    color: colors.text,
+    color: colors.subtext,
     textAlign: 'center',
     marginTop: 10,
     fontSize: 16,
+  },
+  friendItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 10,
+  },
+  friendInfo: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  friendName: {
+    color: colors.text,
+    fontSize: 18,
+    marginLeft: 10,
+  },
+  friendRequestItem: {
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    padding: 15,
+    marginRight: 10,
+    width: 250,
+  },
+  friendRequestName: {
+    color: colors.text,
+    fontSize: 18,
+    marginBottom: 10,
+  },
+  friendRequestButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
   actionButton: {
     flexDirection: 'column',
@@ -603,6 +657,62 @@ const styles = StyleSheet.create({
     marginTop: 5,
     fontSize: 14,
   },
+  removeButton: {
+    backgroundColor: colors.accent,
+    borderRadius: 8,
+    padding: 8,
+  },
+  removeButtonText: {
+    color: colors.text,
+    fontWeight: 'bold',
+  },
+  gpa: {
+    color: colors.text,
+    fontSize: 18,
+    marginTop: 10,
+    marginBottom: 15,
+    textAlign: 'center',
+  },
 });
+
+const FriendItem = ({ friend, onRemove, onViewProfile, isRemoving }) => (
+  <TouchableOpacity onPress={() => onViewProfile(friend)} style={styles.friendItem}>
+    <View style={styles.friendInfo}>
+      <Ionicons name="person-circle-outline" size={32} color={colors.text} />
+      <Text style={styles.friendName}>{friend.name}</Text>
+    </View>
+    <TouchableOpacity onPress={() => onRemove(friend.friendId)} style={styles.removeButton} disabled={isRemoving}>
+      {isRemoving ? (
+        <ActivityIndicator size="small" color={colors.text} />
+      ) : (
+        <Text style={styles.removeButtonText}>Remove</Text>
+      )}
+    </TouchableOpacity>
+  </TouchableOpacity>
+);
+
+const FriendRequestItem = ({ request, onAccept, onDeny, isProcessing }) => (
+  <View style={styles.friendRequestItem}>
+    <Text style={styles.friendRequestName}>
+      {request.senderName || `User ${request.senderId.slice(0, 8)}`}
+    </Text>
+    <View style={styles.friendRequestButtons}>
+      {isProcessing ? (
+        <ActivityIndicator size="small" color={colors.text} />
+      ) : (
+        <>
+          <TouchableOpacity onPress={() => onAccept(request.$id)} style={styles.actionButton}>
+            <Ionicons name="checkmark-circle-outline" size={32} color={colors.tertiary} />
+            <Text style={styles.actionButtonText}>Accept</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => onDeny(request.$id)} style={styles.actionButton}>
+            <Ionicons name="close-circle-outline" size={32} color={colors.accent} />
+            <Text style={styles.actionButtonText}>Deny</Text>
+          </TouchableOpacity>
+        </>
+      )}
+    </View>
+  </View>
+);
 
 export default FriendsScreen;
