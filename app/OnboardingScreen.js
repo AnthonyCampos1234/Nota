@@ -89,7 +89,6 @@ const OnboardingScreen = () => {
             }
         } catch (error) {
             console.error('Error processing schedule:', error);
-            // Handle error (show an alert, etc.)
         } finally {
             setIsProcessing(false);
         }
@@ -106,7 +105,6 @@ const OnboardingScreen = () => {
             }
         } catch (error) {
             console.error('Error processing GPA:', error);
-            // Handle error (show an alert, etc.)
         } finally {
             setIsProcessing(false);
         }
@@ -120,7 +118,6 @@ const OnboardingScreen = () => {
             router.replace('/(tabs)/home');
         } catch (error) {
             console.error('Error finishing onboarding:', error);
-            // Handle error
         }
     }
 
@@ -297,8 +294,8 @@ const styles = StyleSheet.create({
         marginRight: 10,
     },
     video: {
-        width: screenWidth - 40, // Full width minus padding
-        height: (screenWidth - 40) * (16 / 9), // Maintain 16:9 aspect ratio
+        width: screenWidth - 40, 
+        height: (screenWidth - 40) * (16 / 9), 
         marginBottom: 20,
     },
     footer: {
