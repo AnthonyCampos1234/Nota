@@ -121,7 +121,7 @@ const Insight = () => {
 
     flatListRef.current?.scrollToEnd({ animated: true });
 
-    // Simulate AI response (replace with actual AI integration)
+    // need to replace with actual AI integration
     setTimeout(() => {
       const aiResponse = { id: (Date.now() + 1).toString(), text: `I understand you're asking about "${inputText}". As your AI study assistant, I'm here to help. Could you provide more details about what specific information you need?`, sender: 'ai' };
       setMessages(prevMessages => [...prevMessages, aiResponse]);
@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginRight: 10,
     maxHeight: 100,
-    textAlignVertical: 'center', // This centers text vertically
+    textAlignVertical: 'center', 
   },
   sendButton: {
     justifyContent: 'center',
