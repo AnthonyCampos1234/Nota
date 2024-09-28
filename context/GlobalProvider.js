@@ -15,7 +15,7 @@ const GlobalProvider = ({ children }) => {
       const sessionJson = await AsyncStorage.getItem('userSession');
       if (sessionJson) {
         const session = JSON.parse(sessionJson);
-        await account.getSession(session.$id); // Verify the session
+        await account.getSession(session.$id); 
         const currentUser = await getCurrentUser();
         if (currentUser) {
           setIsLogged(true);
