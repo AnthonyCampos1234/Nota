@@ -41,9 +41,8 @@ const formatDueDate = (dateString) => {
 };
 
 const AssignmentItem = ({ item, onPress, onToggleComplete }) => {
-  // Add null check for item
   if (!item) {
-    return null; // or return a placeholder component
+    return null;
   }
 
   const isOverdue = item.dueDate && new Date(item.dueDate) < new Date() && !item.completed;
@@ -360,7 +359,6 @@ const AssignmentsScreen = () => {
       if (!user) throw new Error('User not found');
       setCurrentUser(user);
 
-      // Add a null check and provide a default empty array
       const userAssignments = user.assignments || [];
 
       const parsedAssignments = userAssignments.map(assignment => {
@@ -502,7 +500,7 @@ const AssignmentsScreen = () => {
 
   const getSectionedAssignments = useCallback(() => {
     if (!assignments || assignments.length === 0) {
-      return []; // Return an empty array if there are no assignments
+      return []; 
     }
 
     const now = new Date();
@@ -518,7 +516,7 @@ const AssignmentsScreen = () => {
       { title: 'Due Soon', data: sortAssignments(dueSoon) },
       { title: 'Upcoming', data: sortAssignments(upcoming) },
       { title: 'Completed', data: sortAssignments(completed) },
-    ].filter(section => section.data.length > 0); // Only include non-empty sections
+    ].filter(section => section.data.length > 0); 
   }, [assignments, sortOrder]);
 
   const renderSectionHeader = ({ section: { title } }) => (
