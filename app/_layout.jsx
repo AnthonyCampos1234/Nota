@@ -7,14 +7,13 @@ import GlobalProvider from "../context/GlobalProvider";
 import { FriendsProvider } from "../context/FriendsContext";
 import { useGlobalContext } from "../context/GlobalProvider";
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 const AppLayout = () => {
   const { isLogged, user, loading } = useGlobalContext();
 
   if (loading) {
-    return null; // Or a loading spinner
+    return null; 
   }
 
   let initialRoute = '(auth)';
