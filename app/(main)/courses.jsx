@@ -230,7 +230,6 @@ const Courses = () => {
           const course = JSON.parse(courseString);
           console.log(`Processing course ${index}:`, JSON.stringify(course, null, 2));
 
-          // Extract the first meeting time (if available)
           const meeting = course.meetingTimes && course.meetingTimes.length > 0 ? course.meetingTimes[0] : {};
 
           return {
