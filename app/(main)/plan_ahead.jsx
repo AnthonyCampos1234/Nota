@@ -41,7 +41,7 @@ const AnimatedSection = ({ section, isOpen, toggleOpen }) => {
 
   const maxHeight = animation.interpolate({
     inputRange: [0, 1],
-    outputRange: [60, 250], // Adjust 250 based on your content
+    outputRange: [60, 250], 
   });
 
   return (
