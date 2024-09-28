@@ -71,8 +71,7 @@ const GoalsPage = () => {
     const [newGoalProgress, setNewGoalProgress] = useState('');
 
     useEffect(() => {
-        // Fetch goals from backend or local storage
-        // For now, we're using the hardcoded goals
+        // im using the hardcoded goals for now
     }, []);
 
     const handleAddGoal = useCallback(() => {
