@@ -15,4 +15,4 @@ Nota is a comprehensive mobile application designed to simplify university life 
 ## Technology
 
 Built with React Native and Appwrite, Nota offers a seamless mobile experience for both Android and iOS platforms.
-Utlizies the popular LLM Anthropic's Claude API for intelligent responses to user queries.
+Utlizies the popular LLM Anthropic's Claude API for intelligent responses to user queries. Using AWS Lambda to make calls to Claude.
