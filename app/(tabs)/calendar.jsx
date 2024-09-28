@@ -91,7 +91,6 @@ const CalendarScreen = () => {
 
     const events = [];
 
-    // Convert courses to events
     if (courseSchedule && Array.isArray(courseSchedule)) {
       courseSchedule.forEach((courseString, index) => {
         try {
@@ -134,7 +133,6 @@ const CalendarScreen = () => {
       });
     }
 
-    // Convert assignments to events
     if (assignments && Array.isArray(assignments)) {
       assignments.forEach((assignmentString, index) => {
         try {
@@ -147,7 +145,7 @@ const CalendarScreen = () => {
               location: assignment.courseTitle || 'N/A',
               date: dueDate,
               startTime: dueDate,
-              endTime: new Date(dueDate.getTime() + 60 * 60 * 1000), // Assume 1 hour duration
+              endTime: new Date(dueDate.getTime() + 60 * 60 * 1000), 
               color: '#FF385C',
               repeat: 'none',
               isAssignment: true
@@ -230,10 +228,8 @@ const CalendarScreen = () => {
         return eventDate >= start && eventDate <= end;
       }
 
-      // Check if the event starts before or during the range
       if (eventDate > end) return false;
       if (eventDate < start) {
-        // For repeating events that start before the range, check if they would occur during the range
         const daysDiff = Math.floor((start - eventDate) / (1000 * 60 * 60 * 24));
         switch (event.repeat) {
           case 'daily':
@@ -914,7 +910,7 @@ const styles = StyleSheet.create({
   },
   calendarContent: {
     flex: 1,
-    paddingBottom: 100, // Increased padding to accommodate the add button
+    paddingBottom: 100, 
   },
   controlsSection: {
     position: 'absolute',
@@ -978,7 +974,7 @@ const styles = StyleSheet.create({
   },
   monthWeek: {
     flexDirection: 'row',
-    height: SCREEN_HEIGHT / 9, // Reduced height for month view days
+    height: SCREEN_HEIGHT / 9, 
   },
   monthDay: {
     flex: 1,
@@ -986,7 +982,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 0.5,
     borderColor: colors.textSecondary,
-    padding: 2, // Reduced padding
+    padding: 2,
   },
   otherMonthDay: {
     backgroundColor: colors.gradientMiddle1,
@@ -996,7 +992,7 @@ const styles = StyleSheet.create({
   },
   monthDayText: {
     color: colors.text,
-    fontSize: 12, // Reduced font size
+    fontSize: 12, 
     marginBottom: 1,
   },
   todayText: {
@@ -1013,8 +1009,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   monthEvent: {
-    width: 4, // Reduced size
-    height: 4, // Reduced size
+    width: 4, 
+    height: 4, 
     borderRadius: 2,
     margin: 1,
   },
@@ -1023,7 +1019,7 @@ const styles = StyleSheet.create({
   },
   moreEventsText: {
     color: colors.textSecondary,
-    fontSize: 8, // Reduced font size
+    fontSize: 8, 
   },
   todayMoreEventsText: {
     color: colors.text,
