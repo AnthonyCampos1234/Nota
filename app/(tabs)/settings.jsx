@@ -166,7 +166,6 @@ const Settings = () => {
         const currentScrollY = event.nativeEvent.contentOffset.y;
         const headerTransitionPoint = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT;
 
-        // Haptic feedback when scrolling down (big header disappears)
         if (currentScrollY > lastScrollY.current &&
           currentScrollY > headerTransitionPoint &&
           !hasTriggeredDownHaptic.current) {
@@ -174,7 +173,6 @@ const Settings = () => {
           hasTriggeredDownHaptic.current = true;
           hasTriggeredUpHaptic.current = false;
         }
-        // Haptic feedback when scrolling up (big header reappears)
         else if (currentScrollY < lastScrollY.current &&
           currentScrollY < headerTransitionPoint &&
           !hasTriggeredUpHaptic.current) {
@@ -210,7 +208,6 @@ const Settings = () => {
       if (processedData.success) {
         Alert.alert("Success", "Your GPA has been updated successfully.");
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        // Optionally update local state here
       }
     } catch (error) {
       console.error("Error processing GPA text:", error);
@@ -235,7 +232,7 @@ const Settings = () => {
         { scheduleText: processedText },
         {
           headers: { 'Content-Type': 'application/json' },
-          timeout: 30000 // 30 seconds timeout
+          timeout: 30000
         }
       );
 
@@ -247,14 +244,12 @@ const Settings = () => {
         const { courses, totalCreditHours } = response.data.data;
         const semester = courses[0]?.associated_term || 'Current Semester';
 
-        // Update the user's settings in Appwrite
         const updatedUser = await updateUserSettings(user.$id, {
           courseSchedule: courses,
           totalCreditHours: totalCreditHours,
           semester: semester
         });
 
-        // Update the local user state
         setUser(prevUser => ({
           ...prevUser,
           courseSchedule: updatedUser.courseSchedule,
@@ -262,7 +257,6 @@ const Settings = () => {
           semester: updatedUser.semester
         }));
 
-        // Parse the updated course schedule
         const parsedSchedule = updatedUser.courseSchedule.map(courseString => JSON.parse(courseString));
         setParsedCourseSchedule(parsedSchedule);
 
@@ -302,7 +296,6 @@ const Settings = () => {
 
   const handleGPAUpdate = async (gpaUpdates) => {
     try {
-      // Fetch the current user to ensure we have the correct ID
       const currentUser = await getCurrentUser();
       if (!currentUser) {
         throw new Error("Unable to fetch current user");
@@ -312,7 +305,6 @@ const Settings = () => {
       const userPermissions = await checkUserPermissions(currentUser.$id);
       console.log("User permissions:", userPermissions);
 
-      // Check if the user has the update permission using the accountId
       const updatePermissionString = `update("user:${currentUser.accountId}")`;
       const hasUpdatePermission = userPermissions.includes(updatePermissionString);
 
@@ -320,13 +312,11 @@ const Settings = () => {
       console.log(`Has update permission: ${hasUpdatePermission}`);
 
       if (hasUpdatePermission) {
-        // Proceed with update
         console.log("Attempting to update user settings with:", gpaUpdates);
         const updatedUser = await updateUserSettings(currentUser.$id, gpaUpdates);
         console.log("Update result:", updatedUser);
 
         if (updatedUser) {
-          // Update local state
           setUser(prevUser => ({ ...prevUser, ...gpaUpdates }));
           setGpa(gpaUpdates.currentGPA?.toString() || '');
           Alert.alert("Success", "Your GPA has been updated successfully.");
@@ -360,7 +350,6 @@ const Settings = () => {
           await handleGPAUpdate(gpaUpdates);
         }
       } else if (imageType === 'schedule') {
-        // ... (keep the schedule handling as is)
       }
     } catch (error) {
       console.error("Error updating user data:", error);
@@ -385,18 +374,18 @@ const Settings = () => {
   };
 
   const toggleNotifications = async () => {
-    if (isUpdating) return; // Prevent multiple toggles while updating
+    if (isUpdating) return;
 
     const newValue = !notifications;
     setIsUpdating(true);
-    setNotifications(newValue); // Optimistic update
+    setNotifications(newValue); 
 
     try {
       const updatedUser = await updateUserSettings(user.$id, { notifications: newValue });
       setUser(updatedUser);
     } catch (error) {
       console.error("Error updating notification settings:", error);
-      setNotifications(!newValue); // Revert on error
+      setNotifications(!newValue); 
       Alert.alert("Error", "Failed to update notification settings. Please try again.");
     } finally {
       setIsUpdating(false);
@@ -407,7 +396,7 @@ const Settings = () => {
     if (isUpdating || newValue === gpaVisibility) return;
 
     setIsUpdating(true);
-    setGpaVisibility(newValue); // Optimistic update
+    setGpaVisibility(newValue); 
 
     try {
       const updatedUser = await updateUserSettings(user.$id, { gpaVisibility: newValue });
@@ -415,7 +404,7 @@ const Settings = () => {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
       console.error("Error updating GPA visibility settings:", error);
-      setGpaVisibility(gpaVisibility); // Revert on error
+      setGpaVisibility(gpaVisibility); 
       Alert.alert("Error", "Failed to update GPA visibility settings. Please try again.");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
