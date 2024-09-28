@@ -57,16 +57,13 @@ const SignIn = () => {
     setSubmitting(true);
 
     try {
-      // Check for existing session
       let session;
       try {
         session = await account.getSession('current');
       } catch (error) {
-        // No active session, proceed with sign-in
       }
 
       if (session) {
-        // A session already exists
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
         Alert.alert(
           "Already Signed In",
@@ -121,7 +118,6 @@ const SignIn = () => {
 
   const handleForgotPassword = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    // Add your forgot password logic here
   };
 
   const togglePasswordVisibility = () => {
