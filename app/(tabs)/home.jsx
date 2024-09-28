@@ -235,9 +235,8 @@ const calculateProgress = (user) => {
   }
 
   const cumulativeHours = user.cumulativeHours || 0;
-  const requiredCredits = 120; // Assuming 120 credits are required for graduation
+  const requiredCredits = 120; 
 
-  // Calculate overall progress using cumulative hours
   const overallProgress = (cumulativeHours / requiredCredits) * 100;
 
   return {
@@ -309,7 +308,6 @@ const Home = () => {
         const currentScrollY = event.nativeEvent.contentOffset.y;
         const headerTransitionPoint = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT;
 
-        // Haptic feedback when scrolling down (big header disappears)
         if (currentScrollY > lastScrollY.current &&
           currentScrollY > headerTransitionPoint &&
           !hasTriggeredDownHaptic.current) {
@@ -317,7 +315,6 @@ const Home = () => {
           hasTriggeredDownHaptic.current = true;
           hasTriggeredUpHaptic.current = false;
         }
-        // Haptic feedback when scrolling up (big header reappears)
         else if (currentScrollY < lastScrollY.current &&
           currentScrollY < headerTransitionPoint &&
           !hasTriggeredUpHaptic.current) {
@@ -393,13 +390,13 @@ const Home = () => {
         console.log("No user data returned from getCurrentUser");
         setError("User data not found. Please try logging in again.");
         setIsLoading(false);
-        setUser(null); // Ensure user is set to null if no data is returned
+        setUser(null); 
       }
     } catch (err) {
       console.error("Error fetching user data:", err);
       setError(`Error fetching user data: ${err.message}`);
       setIsLoading(false);
-      setUser(null); // Ensure user is set to null in case of error
+      setUser(null); 
     }
   }, [setUser]);
 
@@ -438,7 +435,7 @@ const Home = () => {
         <TouchableOpacity
           style={[styles.retryButton, { marginTop: 10 }]}
           onPress={() => {
-            // Add logic to navigate to login screen
+            // need to add logic to navigate to login screen
             Alert.alert(
               "Session Expired",
               "Your session has expired. Please log in again.",
@@ -608,10 +605,10 @@ const styles = StyleSheet.create({
   },
   quickAction: {
     alignItems: 'center',
-    width: '23%', // Adjusted to fit 4 items in a row with some spacing
+    width: '23%', 
   },
   quickActionGradient: {
-    width: 60, // Slightly reduced size to fit 4 items
+    width: 60, 
     height: 60,
     borderRadius: 30,
     justifyContent: 'center',
@@ -836,7 +833,7 @@ const styles = StyleSheet.create({
   quickAction: {
     alignItems: 'center',
     marginRight: 20,
-    width: 80, // Fixed width for consistent spacing
+    width: 80, 
   },
   scrollIndicatorContainer: {
     flexDirection: 'row',
