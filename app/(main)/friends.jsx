@@ -279,7 +279,6 @@ const FriendsScreen = () => {
           </Text>
         );
       case 'Friends':
-        // Assuming the user viewing this is already a friend
         return (
           <Text style={styles.gpa}>
             Current GPA: {friend.currentGPA.toFixed(2)},
