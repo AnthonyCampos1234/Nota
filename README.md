@@ -11,10 +11,10 @@ Here's a glimpse of Nota's main pages:
   <img src="NotaPics&Vids/IMG_3254.PNG" alt="Courses Page" width="150" style="margin: 10px;"/>
   <img src="NotaPics&Vids/IMG_3257.PNG" alt="Assignments Page" width="150" style="margin: 10px;"/>
   <img src="NotaPics&Vids/IMG_3256.PNG" alt="Calendar Page" width="150" style="margin: 10px;"/>
-    <img src="NotaPics&Vids/IMG_3263.PNG" alt="Calendar Page" width="150" style="margin: 10px;"/>
-    <img src="NotaPics&Vids/IMG_3264.PNG" alt="Calendar Page" width="150" style="margin: 10px;"/>
-    <img src="NotaPics&Vids/IMG_3261.PNG" alt="Calendar Page" width="150" style="margin: 10px;"/>
-    <img src="NotaPics&Vids/IMG_3259.PNG" alt="Calendar Page" width="150" style="margin: 10px;"/>
+  <img src="NotaPics&Vids/IMG_3263.PNG" alt="Calendar Page" width="150" style="margin: 10px;"/>
+  <img src="NotaPics&Vids/IMG_3264.PNG" alt="Calendar Page" width="150" style="margin: 10px;"/>
+  <img src="NotaPics&Vids/IMG_3261.PNG" alt="Calendar Page" width="150" style="margin: 10px;"/>
+  <img src="NotaPics&Vids/IMG_3259.PNG" alt="Calendar Page" width="150" style="margin: 10px;"/>
   <img src="NotaPics&Vids/IMG_3267.PNG" alt="Goals Page" width="150" style="margin: 10px;"/>
   <img src="NotaPics&Vids/IMG_3268.PNG" alt="Goals Page" width="150" style="margin: 10px;"/>
 </div>
@@ -57,6 +57,7 @@ Here's a brief overview of how Nota helps students manage their academic life:
 2. **Assignment Tracking**
 <div style="display: flex; justify-content: start; flex-wrap: wrap;">
   <img src="NotaPics&Vids/IMG_3256.PNG" alt="Assignment Tracking" width="150" style="margin: 10px;"/>
+  <img src="NotaPics&Vids/IMG_3255.PNG" alt="Assignment Tracking" width="150" style="margin: 10px;"/>
 </div>
 
 3. **GPA Calculation**
