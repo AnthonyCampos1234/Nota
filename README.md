@@ -29,6 +29,7 @@ Here's a glimpse of Nota's main pages:
 - University resources access
 - Personalized insights with Claude API
 
+To migrate to my app a student just needs to copy and paste their schedule's and transcripts; this info is then parsed using Claude's API called by AWS lambda to then put the needed information into appwrite.
 Here's a quick look at how seamless moving to this app as a student is:
 
 <div style="display: flex; justify-content: space-around; flex-wrap: wrap;">
@@ -36,6 +37,8 @@ Here's a quick look at how seamless moving to this app as a student is:
   <img src="NotaPics&Vids/IMG_3243.PNG" alt="Nota SignUp Features" width="150" style="margin: 10px;"/>
   <img src="NotaPics&Vids/IMG_3247.PNG" alt="Nota SignUp Features" width="150" style="margin: 10px;"/>
   <img src="NotaPics&Vids/IMG_3249.PNG" alt="Nota SignUp Features" width="150" style="margin: 10px;"/>
+  <img src="NotaPics&Vids/IMG_3251.PNG" alt="Nota SignUp Features" width="150" style="margin: 10px;"/>
+  <img src="NotaPics&Vids/IMG_3252.PNG" alt="Nota SignUp Features" width="150" style="margin: 10px;"/>
 </div>
 
 ## Technology
