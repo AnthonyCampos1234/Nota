@@ -15,7 +15,7 @@ Nota is a comprehensive mobile application designed to simplify university life 
 
 Here's a quick look at how seamless moving to this app as a student is:
 
-![Nota SignUp Features](./NotaPics&Vids/IMG_3242.png)
+![Nota SignUp Features](NotaPics&Vids/IMG_3242.PNG)
 
 ## Technology
 
