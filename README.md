@@ -14,10 +14,12 @@ Nota is a comprehensive mobile application designed to simplify university life 
 
 Here's a quick look at how seamless moving to this app as a student is:
 
-<img src="NotaPics&Vids/IMG_3242.PNG" alt="Nota SignUp Features" width="200"/>
-<img src="NotaPics&Vids/IMG_3243.PNG" alt="Nota SignUp Features" width="200"/>
-<img src="NotaPics&Vids/IMG_3247.PNG" alt="Nota SignUp Features" width="200"/>
-<img src="NotaPics&Vids/IMG_3249.PNG" alt="Nota SignUp Features" width="200"/>
+<div style="display: flex; justify-content: space-around; flex-wrap: wrap;">
+  <img src="NotaPics&Vids/IMG_3242.PNG" alt="Nota SignUp Features" width="200" style="margin: 10px;"/>
+  <img src="NotaPics&Vids/IMG_3243.PNG" alt="Nota SignUp Features" width="200" style="margin: 10px;"/>
+  <img src="NotaPics&Vids/IMG_3247.PNG" alt="Nota SignUp Features" width="200" style="margin: 10px;"/>
+  <img src="NotaPics&Vids/IMG_3249.PNG" alt="Nota SignUp Features" width="200" style="margin: 10px;"/>
+</div>
 
 ## Technology
 Built with React Native and Appwrite, Nota offers a seamless mobile experience for both Android and iOS platforms.
@@ -27,14 +29,20 @@ Utilizes the popular LLM Anthropic's Claude API for intelligent responses to use
 Here's a brief overview of how Nota helps students manage their academic life:
 
 1. **Course Management**
-   <img src="NotaPics&Vids/IMG_3284.PNG" alt="Course Management" width="200"/>
-   <img src="NotaPics&Vids/IMG_3285.PNG" alt="Course Management" width="200"/>
+<div style="display: flex; justify-content: start; flex-wrap: wrap;">
+  <img src="NotaPics&Vids/IMG_3284.PNG" alt="Course Management" width="200" style="margin: 10px;"/>
+  <img src="NotaPics&Vids/IMG_3285.PNG" alt="Course Management" width="200" style="margin: 10px;"/>
+</div>
 
 2. **Assignment Tracking**
-   <img src="NotaPics&Vids/IMG_3256.PNG" alt="Assignment Tracking" width="200"/>
+<div style="display: flex; justify-content: start; flex-wrap: wrap;">
+  <img src="NotaPics&Vids/IMG_3256.PNG" alt="Assignment Tracking" width="200" style="margin: 10px;"/>
+</div>
 
 3. **GPA Calculation**
-   <img src="NotaPics&Vids/IMG_3273.PNG" alt="GPA Calculator" width="200"/>
+<div style="display: flex; justify-content: start; flex-wrap: wrap;">
+  <img src="NotaPics&Vids/IMG_3273.PNG" alt="GPA Calculator" width="200" style="margin: 10px;"/>
+</div>
 
 ## Demo Video
 Check out my full demo video to see Nota in action:
