@@ -78,7 +78,7 @@ Here's a brief overview of how Nota helps students manage their academic life:
 ## Demo Video
 Check out my full demo video to see Nota in action:
 
-[![Nota Demo Video](Play Animated Icons.gif)](https://drive.google.com/file/d/1OdULGthwyeaNafzQYM2wsaQjS3J9tZBj/view?usp=drivesdk)
+[![Nota Demo Video](./Play%20Animated%20Icons.gif)](https://drive.google.com/file/d/1OdULGthwyeaNafzQYM2wsaQjS3J9tZBj/view?usp=drivesdk)
 
 ## Made by
 me (Anthony Campos) lol
