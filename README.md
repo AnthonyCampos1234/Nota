@@ -16,7 +16,11 @@ Nota is a comprehensive mobile application designed to simplify university life 
 Here's a quick look at how seamless moving to this app as a student is:
 
 ![Nota SignUp Features](NotaPics&Vids/IMG_3242.PNG)
-![Nota SignUp Features](NotaPics&Vids/IMG_3242.PNG)
+![Nota SignUp Features](NotaPics&Vids/IMG_3243.PNG)
+![Nota SignUp Features](NotaPics&Vids/IMG_3247.PNG)
+![Nota SignUp Features](NotaPics&Vids/IMG_3249.PNG)
+
+
 
 ## Technology
 
@@ -29,16 +33,14 @@ Utilizes the popular LLM Anthropic's Claude API for intelligent responses to use
 Here's a brief overview of how Nota helps students manage their academic life:
 
 1. **Course Management**
-   ![Course Management](path_to_course_management.png)
+   ![Course Management](NotaPics&Vids/IMG_3284.PNG)
+   ![Course Management](NotaPics&Vids/IMG_3285.PNG)
 
-2. **Assignment Tracking**
-   ![Assignment Tracking](path_to_assignment_tracking.png)
+3. **Assignment Tracking**
+   ![Assignment Tracking](NotaPics&Vids/IMG_3256.PNG)
 
-3. **GPA Calculation**
-   ![GPA Calculator](path_to_gpa_calculator.png)
-
-4. **Personalized Insights**
-   ![Personalized Insights](path_to_insights.png)
+4. **GPA Calculation**
+   ![GPA Calculator](NotaPics&Vids/IMG_3273.PNG)
 
 ## Demo Video
 
